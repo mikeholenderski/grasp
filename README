@@ -1,0 +1,70 @@
+
+Grasp is a trace visualization tool. To run the Grasp tool simply run the "grasp" executable. It will show a dialogue allowing you to chose a trace file.
+
+The example/ directory contains three example traces. The basic_explained.log trace contains an explanation of the Grasp trace file format and introduces the basic Grasp events. You can view it in a text editor. Note that it is a proper trace, so you can open it with Grasp too.
+
+
+Running Grasp
+=============
+
+Grasp is written in Tcl. The main .vfs directory follows the structure of a tclkit, so the easiest way to run grasp is to:
+
+1. download a tclkit binary from
+     
+     http://code.google.com/p/tclkit or http://equi4.com/pub/tk/downloads.html
+     
+2. place it in the directory containing grasp.vfs
+
+3. run from a terminal: 
+
+     tclkit grasp.vfs/main.tcl
+
+
+Command line options
+====================
+
+Grasp also provides a command line interface. Usage:
+
+  grasp ?options? <log file>
+
+options:
+--settings file      : file name of the settings file to override the default
+                       visualisation settings, such as colors and dimensions of
+                       tasks.
+                       
+--postscript file    : if this option is specified, then the plot will be
+                       written to the postscript file with the given file name
+                       
+--plugins 'path path ...' :
+                       file name of the tcl script, which is going to perform
+                       analysis on the trace
+                       
+--ignore list        : list of strings 'string string ...' to be ignored. All
+                       tasks and servers with an id containing any these strings
+                       will not be shown. (Default '')
+                       
+--ignore_missing bool :
+                       boolean (i.e. 0 or 1) specifying whether to ignore
+                       unimplemented Plot events. (Default 1)
+                       
+--legend side        : where to print a legend. Has to be either 'none', 'right'
+                       or 'bottom'. (Default 'none')
+                       
+--legend_items list  : list of strings 'string string ...' specifying the legend
+                       items to print in the legend. The proper legend items
+                       are: taskActive, taskHoldingMutex, taskPreempted. (
+                       Default 'taskActive taskHoldingMutex taskPreempted
+                       taskArrived')
+                       
+--ignore_api bool    : boolean (i.e. 0 or 1) specifying whether to enable the '
+                       ignore' command in the trace files (if 0 then the 'ignore
+                       ' command has no effect).
+                       
+--exit bool          : boolean (i.e. 0 or 1) specifying whether to quit grasp
+                       after it has plotted the trace. This option can be useful
+                       if grasp is used in batch processing of many traces.
+
+To display the available options you can run the following command from a terminal:
+
+  tclkit grasp.vfs/main.tcl --h
+
