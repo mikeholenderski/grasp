@@ -1,0 +1,256 @@
+Class Analysis
+
+#addHandler PlotReset "Analysis reset"
+#addHandler TraceFinished "Analysis summary"
+
+#addEventHandler jobArrived "Analysis jobArrived"
+#addEventHandler jobResumed "Analysis jobResumed"
+#addEventHandler jobPreempted "Analysis jobPreempted"
+#addEventHandler jobCompleted "Analysis jobCompleted"
+
+Analysis proc reset {} {
+  foreach var {arrived tasks C resumed ready WCET ACET BCET WCRT ACRT BCRT} {
+    catch { Analysis unset $var }
+  }
+}
+
+Analysis proc jobArrived {time job args} {
+  checkClass $job Job 
+
+  # check if job should be ignored
+  if {[Plot checkIgnore $job]} {
+    return
+  }
+
+  updateMaxTime $time
+
+  # store a list of arrivals, in case deadlines larger than periods
+  Analysis lappend arrived($job) $time
+}
+
+Analysis proc jobResumed {time job args} {
+  checkClass $job Job
+
+  # check if job should be ignored
+  if {[Plot checkIgnore $job]} {
+    return
+  }
+  
+  # check if job is actually active
+  if {[string match [$job state] completed]} {
+    return
+  }
+
+  updateMaxTime $time
+
+  # store the time when the job was resumed
+  Analysis set resumed($job) $time
+  
+  # initialize the C (if not yet set)
+  if {[catch {Analysis set C($job)}]} {
+    Analysis set C($job) 0
+  }
+}
+
+Analysis proc jobPreempted {time job args} {
+  checkClass $job Job
+
+  # check if job should be ignored
+  if {[Plot checkIgnore $job]} {
+    return
+  }
+
+  updateMaxTime $time
+
+  set job [string trim $job :]
+  
+  # increment the time
+  if {![catch {Analysis set resumed($job)}]} {
+    Analysis set C($job) [expr [Analysis set C($job)] + $time - [Analysis set resumed($job)]]
+    Analysis set resumed($job) $time
+  } else {
+    return
+    error "Analysis: resumed($job) not defined"
+  }
+}
+
+Analysis proc jobCompleted {time job args} {
+  checkClass $job Job  
+  
+  # check if job should be ignored
+  if {[Plot checkIgnore $job]} {
+    return
+  }
+
+  updateMaxTime $time
+  
+  # increment the execution time
+  if {![catch {Analysis set resumed($job)}]} {
+    Analysis set C($job) [expr [Analysis set C($job)] + $time - [Analysis set resumed($job)]]
+    Analysis set resumed($job) $time
+  } else {
+    Analysis set C($job) 0
+  } 
+      
+  if {![catch {Analysis set arrived($job)}]} {
+    Analysis set response($job) [expr $time - [Analysis set arrived($job)]]
+  }
+  
+  # note that job state should not be changed here, rather inside the "Job completed" method
+  # however, to make the plotter standalone, the state is "hacked" here
+  $job state completed
+}
+
+#
+# Returns the value of a measurement, if defined. Otherwise returns "-"
+# 
+
+Analysis proc get {var task} {
+  RealtimePlot instvar timePrecision
+  
+  set task [string trim $task :]
+  if {[catch {Analysis set ${var}($task)}]} {
+    return -
+  }
+  return [expr double(round([Analysis set ${var}($task)]*$timePrecision))/$timePrecision]
+}
+
+Analysis proc summary {} {
+  Analysis array unset WCET
+  Analysis array unset ACET
+  Analysis array unset BCET
+  Analysis array unset WCRT
+  Analysis array unset ACRT
+  Analysis array unset BCRT
+
+  set time $::maxTime
+
+  # complete all unfinished jobs
+  foreach job [Job info instances] {
+    if {[string match [$job state] running]} {
+      Analysis jobPreempted $time $job
+    }
+  }
+
+  # sort tasks according to their priority
+  set q [Queue new]
+  foreach task [Task info instances] {
+    $q insertDescending $task priority
+  }
+  Analysis set tasks [$q queue]
+  $q destroy
+  
+  # compute the statistics
+  foreach task [Analysis set tasks] {
+    set task [string trim $task :]
+    foreach job [$task jobs] {
+      foreach {data worst average best} {C WCET ACET BCET response WCRT ACRT BCRT} {
+        catch {
+          set C [Analysis set ${data}($job)]
+          # initialize, do it here, since the response time may not be defined for some jobs
+          if {[catch {Analysis set ${worst}($task)}]} {
+            Analysis set ${worst}($task) $C
+            Analysis set ${best}($task) $C
+          }
+
+          Analysis set ${worst}($task) [math::max [Analysis set ${worst}($task)] $C]
+          Analysis lappend ${average}($task) $C
+          Analysis set ${best}($task) [math::min [Analysis set ${best}($task)] $C]
+        }
+      }
+    }
+
+    # finish up computing the averages
+    foreach var {ACET ACRT} {
+      catch {
+        set C 0
+        foreach c [Analysis set ${var}($task)] {
+          set C [expr $C + $c]
+        }
+        Analysis set ${var}($task) [expr double($C)/[llength [Analysis set ${var}($task)]]]
+      }
+    }
+  }
+
+  # refresh the gui
+  Analysis toggleGUI
+  Analysis toggleGUI
+}
+
+Analysis proc dump {} {
+  puts "Measurements:"
+  foreach {task} [Analysis set tasks] {
+    puts -nonewline "  [$task name]:"
+    foreach var {WCET ACET BCET WCRT ACRT BCRT} {
+      puts -nonewline " $var=[Analysis get $var $task]"
+    }
+    puts ""
+  }
+}
+
+Analysis proc toggleGUI {} {
+  if {[winfo exists .analysis]} {
+    destroy .analysis
+  } else {
+    toplevel .analysis
+    wm title .analysis Measurements
+
+    # create a table of measurements for all tasks
+    set column 1
+    set row 1
+    
+    # create the header
+    foreach var {WCET ACET BCET WCRT ACRT BCRT} {
+      grid [label .analysis.header$var -text $var] -row 0 -column $column
+      incr column
+    }
+    # create the one row per task
+    foreach {task} [Analysis set tasks] {
+      grid [label .analysis.task$task -text [$task name]] -row $row -column 0
+      set column 1
+      foreach var {WCET ACET BCET WCRT ACRT BCRT} {
+        grid [label .analysis.task$task$var -text [Analysis get $var $task]] -row $row -column $column
+        incr column
+      }
+      incr row
+    }
+    
+    # create a button for exporting to text file
+    grid [button .analysis.export -text "Export to a file" -command "Analysis exportToFile"] -row $row -columnspan 7
+    
+    update
+    wm resizable .analysis 0 0
+  }
+}
+
+# create an Analysis menu
+Analysis proc createMenu {} {
+  lappend ::menus {
+    $menu.tools add command -label Measurements -command "Analysis toggleGUI"
+  }
+}
+
+Analysis proc exportToFile {} {
+  set defaultDir [file dirname $::traceFileName]
+  set defaultFile [file tail [file rootname $::traceFileName]].tab
+  set fileName [tk_getSaveFile -initialfile $defaultFile -initialdir $defaultDir]
+  if {![llength $fileName]} return
+
+  set channel [open $fileName w+]
+  
+  # create the header
+  foreach var {WCET ACET BCET WCRT ACRT BCRT} {
+    puts -nonewline $channel \t$var
+  }
+  puts $channel ""
+  # create the one row per task
+  foreach {task} [Analysis set tasks] {
+    puts -nonewline $channel [$task name]
+    foreach var {WCET ACET BCET WCRT ACRT BCRT} {
+      puts -nonewline $channel "\t[Analysis get $var $task]"
+    }
+    puts $channel ""
+  }
+
+  close $channel
+}

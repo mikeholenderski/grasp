@@ -1,0 +1,43 @@
+#
+# This trace was automatically generated from an Ftrace trace by Grasp (version 2011.12.30.2241)
+#
+newTask 6679 -name "metacity"
+newJob 6679.job 6679 -name "[6679 name]"
+plot 0 jobStarted 6679.job
+newTask 6731 -name "gnome-screensav"
+newJob 6731.job 6731 -name "[6731 name]"
+plot 0 jobStarted 6731.job
+newTask 6242 -name "Xorg"
+newJob 6242.job 6242 -name "[6242 name]"
+plot 0 jobStarted 6242.job
+newTask 10167 -name "gnome-terminal"
+newJob 10167.job 10167 -name "[10167 name]"
+plot 0 jobStarted 10167.job
+newTask 22492 -name "bash"
+newJob 22492.job 22492 -name "[22492 name]"
+plot 0 jobStarted 22492.job
+plot 0.0 jobPreempted 22492.job -target 10167.job
+plot 0.0 jobResumed 10167.job
+plot 0.0005570000000716391 jobPreempted 10167.job -target 22492.job
+plot 0.0005570000000716391 jobResumed 22492.job
+plot 0.0006540000000541113 jobPreempted 22492.job -target 10167.job
+plot 0.0006540000000541113 jobResumed 10167.job
+plot 0.0007699999999886131 jobPreempted 10167.job -target 6242.job
+plot 0.0007699999999886131 jobResumed 6242.job
+plot 0.0010010000000875152 jobPreempted 6242.job -target 10167.job
+plot 0.0010010000000875152 jobResumed 10167.job
+plot 0.0010389999999915744 jobPreempted 10167.job -target 6242.job
+plot 0.0010389999999915744 jobResumed 6242.job
+plot 0.001276000000075328 jobPreempted 6242.job -target 6679.job
+plot 0.001276000000075328 jobResumed 6679.job
+plot 0.001439000000004853 jobPreempted 6679.job -target 6242.job
+plot 0.001439000000004853 jobResumed 6242.job
+plot 0.001488999999992302 jobPreempted 6242.job -target 6731.job
+plot 0.001488999999992302 jobResumed 6731.job
+plot 0.0016239999999925203 jobPreempted 6731.job -target 6242.job
+plot 0.0016239999999925203 jobResumed 6242.job
+plot 0.0017720000000736036 jobPreempted 6242.job -target 6679.job
+plot 0.0017720000000736036 jobResumed 6679.job
+plot 0.0018140000000812506 jobPreempted 6679.job -target 6242.job
+plot 0.0018140000000812506 jobResumed 6242.job
+

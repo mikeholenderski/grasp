@@ -1,0 +1,393 @@
+Class Buffer -parameter {{capacity 1} {seqNumber 0} {name "?"} {elements {}} {maxOccupancy 0}}
+
+bind . <<PlotReset>> "+Buffer reset"
+bind . <<TimeChanged>> "+BufferPlot rewindToTime %d"
+
+Buffer proc reset {} {
+  foreach buffer [Buffer info instances -closure] { $buffer destroy }
+}
+
+Buffer instproc initWith {args} {
+  
+  set optional {capacity seqNumber name}
+  
+  parseArgs $args $optional
+
+  set buffer [self]
+  
+  if {[info exists name]} {
+    $buffer name $name
+  } else {
+    $buffer name $id
+  }
+    
+  foreach argument $optional {
+    if {[info exists $argument]} {
+      $buffer $argument [set $argument]
+    }
+  }
+    
+  return $buffer
+}
+
+proc newBuffer {id args} {
+  eval [Buffer $id] initWith $args
+}
+
+Class BufferPlot -superclass Plot -parameter { {w .bufferplot} {past ""} {future ""} {chain {}}}
+
+# initialize static variables
+BufferPlot set activePlot ""
+
+bind . <<PlotReset>> "+BufferPlot reset"
+
+BufferPlot proc reset {} {
+  BufferPlot set activePlot ""
+}
+
+BufferPlot proc new {} {
+  set plot [next]
+
+  # load settings
+  foreach {key value} [array get ::Settings bufferplot.*] {
+    set key [string range $key [string length "bufferplot."] end]
+    BufferPlot set $key $value
+  }
+
+  set w .bufferplot  
+  $plot initCanvas $w $w.c -name "Buffers"
+
+  # draw all the buffers
+  $plot drawAllBuffers
+    
+  $plot past [LifoQueue new]
+  $plot future [LifoQueue new]
+  
+  return $plot
+}
+
+BufferPlot proc rewindToTime {time} {
+  foreach plot [BufferPlot info instances -closure] {
+    $plot rewindToTime $time
+  }
+}
+
+BufferPlot instproc update {} {
+  my instvar c
+  BufferPlot instvar offsetX
+  BufferPlot instvar offsetY
+  
+  foreach {x1 y1 x2 y2} [$c bbox all] break
+  if {![info exists x1]} return
+
+  $c config -scrollregion [list [math::min 0 [expr $x1 - $offsetX]] \
+                                [math::min 0 [expr $y1 - $offsetY]] \
+                                [expr $x2 + $offsetX] \
+                                [expr $y2 + $offsetY] ]
+}
+
+BufferPlot instproc drawTask {task previousBuffers arrowNext} {
+  my instvar c
+  BufferPlot instvar offsetX
+  BufferPlot instvar offsetY
+  BufferPlot instvar bufferElementHeight
+  BufferPlot instvar bufferElementWidth
+  BufferPlot instvar bufferSpacing
+
+  # get rid of the leading "::" in the buffer name (if any). This is needed so that the logfile
+  # is not required to place "::" in front of every entity name
+  set task [string trimleft $task :]
+
+  # calculate the offset due to buffers in front of it
+  set bufferOffset 0
+  foreach previous $previousBuffers {
+    incr bufferOffset [expr [$previous capacity]*$bufferElementWidth + $bufferSpacing]
+  }
+  
+  set x [expr $offsetX + $bufferOffset - $bufferSpacing/2]
+  set y [expr $offsetY + $bufferElementHeight/2]
+  
+  # draw the label
+  set tag [$c create text $x $y -text [$task name] -tags "$task.label buffer"]
+    
+  # draw arrow
+  foreach {x1 y1 x2 y2} [$c bbox $tag] break
+  if {[llength $previousBuffers]} {    
+    $c create line [expr $x - $bufferElementHeight] $y [expr $x1 - 5] $y -arrow last -tags "$task.arrow buffer"
+  }
+  if {[llength $arrowNext]} {
+    $c create line [expr $x2 + 5] $y [expr $x + $bufferElementHeight] $y -arrow last -tags "$task.arrow buffer"
+  }
+}
+
+
+
+BufferPlot instproc drawBuffer {buffer previousBuffers} {
+  my instvar c
+  BufferPlot instvar offsetX
+  BufferPlot instvar offsetY
+  BufferPlot instvar bufferElementHeight
+  BufferPlot instvar bufferElementWidth
+  BufferPlot instvar bufferSpacing
+
+  # get rid of the leading "::" in the buffer name (if any). This is needed so that the logfile
+  # is not required to place "::" in front of every entity name
+  set buffer [string trimleft $buffer :]
+
+  # calculate the offset due to buffers in front of it
+  set bufferOffset 0
+  foreach previous $previousBuffers {
+    incr bufferOffset [expr [$previous capacity]*$bufferElementWidth + $bufferSpacing]
+  }
+  
+  set x [expr $offsetX + $bufferOffset]
+  set y $offsetY
+  
+  # draw the label
+  $c create text [expr $x + ([$buffer capacity]*$bufferElementWidth)/2] [expr $y - 5] -anchor s \
+    -text [$buffer name] -tags "$buffer.label buffer"
+  
+  # draw the buffer elements
+  for {set i 0} {$i < [$buffer capacity]} {incr i} {
+    $c create rect $x $y [expr $x + $bufferElementWidth] [expr $y + $bufferElementHeight] \
+      -tags "$buffer.$i.rect buffer"
+    $c create text [expr $x + $bufferElementWidth/2] [expr $y + $bufferElementHeight/2] \
+      -tags "$buffer.$i.text buffer"
+    incr x $bufferElementWidth
+  }
+}
+
+BufferPlot instproc drawAllBuffers {} {
+  set buffers [Queue new]
+  $buffers queue [Buffer info instances]
+  
+  # sort buffers according to their sequence number
+  $buffers sort seqNumber
+  
+  # layout the buffers
+  set previousBuffers {}
+  foreach buffer [$buffers queue] {
+    my drawBuffer $buffer $previousBuffers
+    lappend previousBuffers $buffer
+  }
+  
+  $buffers destroy
+}
+
+BufferPlot instproc drawChain {chain} {
+  my instvar c
+  
+  set previousBuffers {}
+  foreach {task buffer} [concat $chain ""] {
+    # draw the task
+    my drawTask $task $previousBuffers $buffer
+    
+    # draw the buffer
+    if {[llength $buffer]} {
+      my drawBuffer $buffer $previousBuffers
+      lappend previousBuffers $buffer
+    }
+  }
+}
+
+BufferPlot instproc drawBuffers {} {
+  my instvar chain
+  if {[llength $chain]} {
+    my drawChain $chain
+  } else {
+    my drawAllBuffers
+  }
+}
+
+BufferPlot instproc updateBuffer {buffer} {
+  my instvar c
+  BufferPlot instvar colorEmpty
+  BufferPlot instvar colorFilled
+  $buffer instvar elements
+
+  # get rid of the leading "::" in the buffer name (if any). This is needed so that the logfile
+  # is not required to place "::" in front of every entity name
+  set buffer [string trimleft $buffer :]
+  
+  # update the buffer
+  for {set i 0} {$i < [$buffer capacity]} {incr i} {
+    $c itemconfig $buffer.$i.rect -fill $colorEmpty
+    $c itemconfig $buffer.$i.text -text ""
+  }
+
+  for {set i 0} {$i < [llength $elements]} {incr i} {
+    set j [expr [$buffer capacity] - 1 - $i]
+    $c itemconfig $buffer.$j.rect -fill $colorFilled
+    $c itemconfig $buffer.$j.text -text [lindex $elements $i] -justify center
+  }
+  
+  my update
+}
+
+BufferPlot instproc updateAllBuffers {} {
+  foreach buffer [Buffer info instances] {
+    my updateBuffer $buffer
+  }
+}
+
+#
+# The BufferPlot allows to move back and forth throught teh simulation. For this purpose it keeps
+# two stacks: past and future. The heads of the stacks point to the latest event in the past and
+# the earliest event in the future, relative to the "now". When now is changed, events are processed
+# in the direction of the change (i.e. into the past of future), and their reverse is pushed in the
+# oposite direction.
+#
+# Invariant: 
+# - the sum of the elements in both stacks is constant and equal to the number of simulated events.
+#
+
+BufferPlot instproc rewindToTime {time} {
+  my instvar past
+  my instvar future
+  global maxTime
+  
+  # ignore rewinding if outside of the time boundaries, and there is nothing "pending" to process
+  if {($time < 0 && ![$past length]) || ($maxTime < $time && ![$future length])} return
+
+  if {[$past length]} {
+    set pastTime [lindex [$past peek] 0]
+  } else {
+    set pastTime -1
+  }
+  if {[$future length]} {
+    set futureTime [lindex [$future peek] 0]
+  } else {
+    set futureTime [expr $maxTime + 1]
+  }
+
+  # check for sanity of the past and future stacks
+  if {$pastTime < $futureTime} {
+    # check if moving into the past
+    if {$time < $pastTime} {
+      while {$time <= $pastTime} {
+        foreach {eventTime eventAction} [$past pop] break
+        my set time $eventTime
+        eval my $eventAction -behind future
+        if {[$past length]} {
+          set pastTime [lindex [$past peek] 0]
+        } else {
+          break
+        }
+      }
+      
+    # check if moving into the future
+    } elseif {$futureTime <= $time} {
+      while {$futureTime <= $time} {
+        foreach {eventTime eventAction} [$future pop] break
+        my set time $eventTime
+        eval my $eventAction -behind past
+        if {[$future length]} {
+          set futureTime [lindex [$future peek] 0]
+        } else {
+          break
+        }
+      }
+    }
+  } else {
+    puts "ERROR $pastTime < $futureTime"
+  }
+}
+
+#
+# Events
+#
+
+BufferPlot proc event {time event args} {
+  BufferPlot instvar activePlot
+  
+  if {[llength [$activePlot info methods $event]]} {
+    $activePlot set time $time
+    updateMaxTime $time
+    eval $activePlot $event $args
+  } else {
+    error "'$event' is not implemented"
+  }
+  
+  return
+}
+
+BufferPlot instproc structure {chain} {
+  my set chain $chain
+}
+
+BufferPlot instproc drop {buffer index args} {
+  set behind past
+  
+  parseArgs $args {behind}
+  
+  # push the reverse event onto the oposite queue
+  set action "insert $buffer [list [lindex [$buffer elements] $index]] $index"
+  [my $behind] push [list [my set time] $action]
+
+  # drop the element from the buffer
+  $buffer elements [lreplace [$buffer elements] $index $index]
+  my updateBuffer $buffer
+}
+
+BufferPlot instproc insert {buffer data index args} {
+  set behind past
+  
+  parseArgs $args {behind}
+  
+  # push the reverse event onto the oposite queue
+  set action "drop $buffer $index"
+  [my $behind] push [list [my set time] $action]
+
+  # insert the element into the buffer
+  $buffer elements [linsert [$buffer elements] $index $data]
+  my updateBuffer $buffer
+
+  # save some statistics
+  $buffer maxOccupancy [math::max [$buffer maxOccupancy] [llength [$buffer elements]]]
+}
+
+BufferPlot instproc pop {buffer} {
+  my drop $buffer 0
+}
+
+BufferPlot instproc push {buffer data} {
+  # fill the buffer from the end
+  my insert $buffer $data end
+}
+
+BufferPlot instproc resize {buffer size args} {
+  if {$size == [$buffer capacity]} return
+  
+  if {$size < [llength [$buffer elements]]} {
+    puts "ERROR resizing buffer too much (new capacity $size does not fit [llength [$buffer elements]] elements"
+  }
+
+  set behind past
+  
+  parseArgs $args {behind}
+  
+  # push the reverse event onto the oposite queue
+  set action "resize $buffer [$buffer capacity]"
+  [my $behind] push [list [my set time] $action]
+
+  # change the capacity to the new size  
+  $buffer capacity $size
+  
+  # update all buffers, since the resizing might have shifted other buffers
+  [my c] delete buffer
+  my drawBuffers
+  my updateAllBuffers
+}
+
+proc bufferplot {args} {
+  # if processor was not specified, then forward to the default plot
+  BufferPlot instvar activePlot
+
+  # check if plot was initialized
+  if {![llength $activePlot]} {
+    set activePlot [BufferPlot new]
+    $activePlot reset
+  }  
+
+  uplevel #0 BufferPlot event $args
+}

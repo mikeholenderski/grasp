@@ -1,0 +1,657 @@
+RealtimePlot instproc drawMessageShape {shape x y args} {
+  RealtimePlot instvar dotRadius
+  RealtimePlot instvar offsetX
+  my instvar c
+  
+  set color black
+  set tag ""
+  
+  parseArgs $args {color tag}
+  
+  set x1 [expr $x - $dotRadius]
+  set y1 [expr $y - $dotRadius]
+  set x2 [expr $x + $dotRadius]
+  set y2 [expr $y + $dotRadius]
+  
+  set tag "message $tag"
+  
+  switch $shape {
+    cross {
+      $c create line $x1 $y1 $x2 $y2 -fill $color -tags $tag
+      $c create line $x1 $y2 $x2 $y1 -fill $color -tags $tag
+    }
+    plus {
+      $c create line $x $y1 $x $y2 -fill $color -tags $tag
+      $c create line $x1 $y $x2 $y -fill $color -tags $tag
+    }
+    triangleUp {
+      $c create poly $x1 $y2 $x2 $y2 $x $y1 $x1 $y2 -fill $color -outline $color -tags $tag
+    }
+    triangleDown {
+      $c create poly $x2 $y1 $x $y2 $x1 $y1 -fill $color -outline $color -tags $tag
+    }
+    square {
+      $c create rect $x1 $y1 $x2 $y2 -outline $color -tags $tag
+    }
+    diamond {
+      $c create poly $x $y1 $x2 $y $x $y2 $x1 $y $x $y1 -fill $color -outline $color -tags $tag
+    }
+    circle  {
+      $c create oval $x1 $y1 $x2 $y2 -outline $color -tags $tag
+    }
+    disk -
+    default  {
+      # check is specified a single letter
+      if {[regexp {^[[:alnum:]]$} $shape]} {
+        set font "-size 9 -family Helvetica"
+        $c create text $x $y -anchor center -text $shape -font $font -justify center -fill $color -tags $tag
+      } else {
+        $c create oval $x1 $y1 $x2 $y2 -fill $color -outline $color -tags $tag
+      }
+    }
+  }
+  
+}
+
+RealtimePlot instproc drawMessage {time message args} {
+  my instvar c
+  my instvar bottomY
+  RealtimePlot instvar timelineHeight
+  RealtimePlot instvar dotRadius
+  my instvar messageNumber
+  
+  set color black
+  set shape disk
+  
+  parseArgs $args {color shape}
+  
+  set x [my xForTime $time] 
+  
+  set y [expr $bottomY + 2*$timelineHeight]
+
+  set r $dotRadius
+  # shift the message downwards until not overlapping with another message
+  set overlapping [$c find overlapping [expr $x-$r] [expr $y-$r] [expr $x+$r] [expr $y+$r]]
+  while {[llength $overlapping] > 0} {
+    # check if overlapping only with a text widget used for the center of the shape
+    #if {[llength $overlapping] == 1 && [lsearch [$c gettags $overlapping] center] > -1} break
+    
+    set y [expr $y + 4*$r]
+    set overlapping [$c find overlapping [expr $x-$r] [expr $y-$r] [expr $x+$r] [expr $y+$r]]
+  }
+  set tag message.$messageNumber
+  incr messageNumber
+  
+  # draw the message
+  my drawMessageShape $shape $x $y -color $color -tag $tag
+  
+  # draw a point at which coords the message will be drawn. Note that the coors cannot be
+  # simply passed arguments, in case the dot moves later on.
+  set coordsTag [$c create text $x $y -font tinyFont -tags "message $tag center"]
+  
+  # bind events for mouse click, to display the message
+  set message "$message"
+  $c bind $tag <ButtonPress> "[self] showMessage $coordsTag [list $message] -time $time"
+  $c bind $tag <ButtonRelease> "[self] hideMessage"
+}
+
+RealtimePlot instproc drawTimeline {} {
+  # draw timeline, on the bottom of all tasks
+  my instvar c
+  my instvar bottomY
+  my instvar footnoteY
+  global maxTime
+  RealtimePlot instvar offsetX
+  RealtimePlot instvar timeUnit
+  RealtimePlot instvar timelineOffsetY
+  RealtimePlot instvar timelineBarHeight
+  RealtimePlot instvar timelineHeight
+  RealtimePlot instvar timelineLabelsOffsetY
+  RealtimePlot instvar timelineHeadWidth
+  RealtimePlot instvar timelineLabelIntervals
+  
+  $c delete timeline
+  set y [expr $bottomY + $footnoteY]
+  incr footnoteY $timelineOffsetY
+
+  # draw the main line
+  set timelineLength [expr [my xForTime [expr $maxTime + 1]] + $timelineHeadWidth]
+  $c create line $offsetX $y $timelineLength  $y -arrow last -tags "scalable timeline"
+  
+  # determin how often to place the lables
+  #set labelStep [expr 100.0/$timeUnit]
+  set labelStep 5
+  
+  set shortY [expr $y - $timelineBarHeight/2]
+  set middleY [expr $y - $timelineBarHeight]
+  set longY [expr $y - $timelineBarHeight*2]
+  set labelY [expr $y + $timelineLabelsOffsetY]
+  
+  # each label is assigned to a set of intervals in which it is gong to be shown
+  set timelineLabelIntervals {}
+  set interval 5
+  set intervalFactor 2
+  while {$interval < $maxTime} {
+    lappend timelineLabelIntervals $interval
+    set interval [expr $interval * $intervalFactor]
+    if {$intervalFactor == 2} {
+      set intervalFactor 5
+    } else {
+      set intervalFactor 2
+    }
+  }
+  
+  for {set i 0} {$i <= $maxTime} {incr i} {
+    set x [my xForTime $i]
+    
+    if {$i % round($labelStep) == 0} {
+      # determin the intervals to which the label belongs to
+      if {$i == 0} { 
+        set tag "label.first"
+      } else {
+        set tag ""
+      }
+      foreach interval $timelineLabelIntervals {
+        if {$i % $interval == 0} {
+          append tag " interval.$interval"
+        }
+      }
+      
+      $c create text $x $labelY -text $i -anchor n -tags "scalable timeline label $tag"
+    }
+    
+    # determin the intervals to which the label belongs to
+    set tag ""
+    foreach interval [concat 1 $timelineLabelIntervals] {
+      if {$i % $interval == 0} {
+        append tag " interval.$interval"
+      }
+    }
+    $c create line $x $shortY $x $y -state hidden -tags "scalable timeline mark short $tag"
+    $c create line $x $middleY $x $y -state hidden -tags "scalable timeline mark middle $tag"
+    $c create line $x $longY $x $y -state hidden -tags "scalable timeline mark long $tag"
+  }
+  
+  $c lower timeline
+  
+  #incr bottomY $timelineOffsetY
+}
+
+RealtimePlot instproc drawLegendItem {item x y args} {
+  my instvar c
+  RealtimePlot instvar legendItemHeight
+  RealtimePlot instvar legendItemWidth
+  RealtimePlot instvar legendItemMargin
+  RealtimePlot instvar legendItemLabelWidth
+
+  set legendTag "legenddefault"
+  parseArgs $args {legendTag}
+  
+  set kind [lindex $item 0]
+  
+  set x1 $x
+  set y1 [expr $y - $legendItemHeight/2]
+  set x2 [expr $x1 + $legendItemWidth]
+  set y2 [expr $y + $legendItemHeight/2]
+  set x3 [expr $x2 + $legendItemMargin]
+  set X [expr ($x1+$x2)/2]
+
+  switch $kind {
+    taskActive {
+      $c create rect $x1 $y1 $x2 $y2 -fill $::Settings(color.task.active) -tags "legend $kind $legendTag"
+      $c create text $x3 $y -text "active" -anchor w -tags "legend $kind $legendTag" -width $legendItemLabelWidth
+    }
+    taskHoldingMutex {
+      $c create rect $x1 $y1 $x2 $y2 -fill $::Settings(color.task.criticalSection) -tags "legend $kind $legendTag"
+      $c create text $x3 $y -text "holding mutex" -anchor w -tags "legend $kind $legendTag" -width $legendItemLabelWidth
+    }
+    taskPreempted {
+      $c create rect $x1 $y1 $x2 $y2 -fill $::Settings(color.task.preempted) -tags "legend $kind $legendTag"
+      $c create text $x3 $y -text "preempted" -anchor w -tags "legend $kind $legendTag" -width $legendItemLabelWidth
+    }
+    taskArrived {
+      $c create line $X $y1 $X $y2 -fill black -tags "legend $kind $legendTag" -arrow last
+      $c create text $x3 $y -text "arrived" -anchor w -tags "legend $kind $legendTag" -width $legendItemLabelWidth
+    }
+    taskDeadline {
+      $c create line $X $y1 $X $y2 -fill black -tags "legend $kind $legendTag" -arrow first
+      $c create text $x3 $y -text "deadline" -anchor w -tags "legend $kind $legendTag" -width $legendItemLabelWidth
+    }
+    task {
+      set task [lindex $item 1]
+      $c create rect $x1 $y1 $x2 $y2 -fill [$task color] -stipple [$task pattern] -tags "legend $kind $legendTag $task"
+      $c create text $x3 $y -text "[$task name]" -anchor w -tags "legend $kind $legendTag $task"
+    }
+  }
+  return [$c bbox "$kind && $legendTag"]
+}
+
+RealtimePlot instproc drawLegend {side items args} {
+  my instvar c
+  global maxTime
+  RealtimePlot instvar offsetX
+  RealtimePlot instvar offsetY
+  RealtimePlot instvar legendOffsetX
+  RealtimePlot instvar legendOffsetY
+  RealtimePlot instvar legendItemHeight
+  RealtimePlot instvar legendItemWidth
+  RealtimePlot instvar legendItemMargin
+  RealtimePlot instvar timelineOffsetY
+
+  set legendTag "legenddefault"
+  set title "Legend"
+  
+  parseArgs $args {legendTag title}
+
+  # a little temporary hack around the bottomY. It should only be incremented by porper items
+  # such as tasks or servers, not by timeline or legend, since it would lead to the servers
+  # or other plugins being offset by the timeline and legend heigh. hence here we compensate for it.
+  my instvar footnoteY
+  set bottomY [expr [my set bottomY] + $footnoteY]
+  incr footnoteY [expr [RealtimePlot set taskMargin] + $legendItemHeight]
+
+  # draw the title
+  set x 0
+  set y 0
+  $c create text $x $y -text "$title:" -anchor w -tags "legend title $legendTag" \
+    -font TkDefaultFont
+  foreach {x1 y1 x2 y2} [$c bbox "title && $legendTag"] break
+
+  # draw the items
+  switch $side {
+    right {
+      foreach item $items {
+        set y [expr $y2 + $legendItemHeight/2 + $legendItemMargin]
+        foreach {x1 y1 x2 y2} [my drawLegendItem $item $x $y -legendTag $legendTag] break
+      }
+      
+      # move the legend to the right side of the plot
+      my centerVertically $legendTag
+    }
+    bottom {
+      foreach item $items {
+        set x [expr $x2 + $legendItemMargin]
+        foreach {x1 y1 x2 y2} [my drawLegendItem $item $x $y -legendTag $legendTag] break
+      }    
+      
+      # move the legend below the timeline
+      my centerHorizontally $legendTag
+      
+      # move the message dots below the legend
+      $c move message 0 [expr $y2 - $y1 + $legendOffsetY]
+      
+      # increase the bottom, just in case
+      #incr bottomY [expr $y2 - $y1 + $legendOffsetY]
+    }
+    default {
+      error "wrong legend side '$side'"
+    }
+  }
+}
+
+RealtimePlot instproc drawTaskExpanded {task} {
+  my instvar c
+  my instvar bottomY
+  RealtimePlot instvar offsetX
+  RealtimePlot instvar labelOffsetX
+  RealtimePlot instvar taskArrowHeight
+  RealtimePlot instvar taskBarHeight
+
+  # insert the task into the tasks list and shift all the stuff below it
+  [my tasks] insertDescending $task priority
+  
+  # get the level of the new task
+  set i [lsearch [[my tasks] queue] $task]
+  set taskHeight [my taskHeight]
+  my setYForTask $task [expr $i*$taskHeight]
+
+  # shift all the tasks lower then the newly inserted task
+  foreach t [lrange [[my tasks] queue] [expr $i+1] end] {
+    # shift the task
+    my setYForTask $t [expr [my yForTask $t] + $taskHeight]
+    $c move task.$t 0 $taskHeight
+
+    set y [expr [my yForTask $t] + $taskArrowHeight]
+    # adjust all preemption lines to and from that task
+    foreach line [$c find withtag "from.$t && preemptionline"] {
+      foreach {x1 y1 x2 y2} [$c coords $line] break
+      $c coords $line $x1 $y $x2 $y2
+    }
+    foreach line [$c find withtag "to.$t && preemptionline"] {
+      foreach {x1 y1 x2 y2} [$c coords $line] break
+      $c coords $line $x1 $y1 $x2 $y
+    }
+  }
+  
+  # adjust any preemptions to the new task, in case a preemption line was already drawn
+  foreach line [$c find withtag "to.$task && preemptionline"] {
+    foreach {x1 y1 x2 y2} [$c coords $line] break
+    $c coords $line $x1 $y1 $x2 [expr [my yForTask $task] + $taskArrowHeight]
+  }
+
+  # shift the timeline
+  $c move timeline 0 $taskHeight
+  # shift the messages
+  $c move message 0 $taskHeight
+  # shift all servers
+  foreach s [[my servers] queue] {
+    # shift the task
+    $s plotY [expr [$s plotY]+$taskHeight]
+  }
+  $c move server 0 $taskHeight
+
+  # shift all intervals
+  foreach line [$c find withtag "interval&&line"] {
+    foreach {x1 y1 x2 y2} [$c coords $line] break
+    $c coords $line $x1 $y1 $x2 [expr $y2 + $taskHeight]
+  }
+  $c move "interval&&label" 0 $taskHeight
+  
+  # update bottomY
+  incr bottomY $taskHeight
+
+  # draw task name label
+  set x [expr $offsetX - $labelOffsetX]
+  set y [expr [my yForTask $task] + $taskArrowHeight + $taskBarHeight/2]
+  set tag [$c create text $x $y -text [$task name] -anchor e -tags "task.$task label"]
+
+  # bind the analysis label
+  set message "WCET: \[Analysis get WCET $task\], ACET: \[Analysis get ACET $task\], BCET: \[Analysis get BCET $task\]\nWCRT: \[Analysis get WCRT $task\], ACRT: \[Analysis get ACRT $task\], BCRT: \[Analysis get BCRT $task\]"
+  $c bind $tag <ButtonPress> "[self] showTooltip \[$c canvasx %x\] \[$c canvasy %y\] [list $message]"
+  $c bind $tag <ButtonRelease> "[self] hideTooltip"  
+}
+
+RealtimePlot instproc drawTaskCollapsed {task} {
+  # insert the task into the tasks list and shift all the stuff below it
+  [my tasks] insertDescending $task priority
+}
+
+RealtimePlot instproc drawTask {task} {
+  # trim the leading colons
+  set task [string trimleft $task :]
+
+  # check if task is already drawn in this plot
+  if {[lsearch [[my tasks] queue] $task] > -1} return
+
+  switch $::Settings(plot.tasks) {
+    collapsed {
+      my drawTaskCollapsed $task
+    }
+    expanded -
+    default {
+      my drawTaskExpanded $task
+    }
+  }
+}
+
+RealtimePlot instproc drawRectangle {job time colorTopic args} {
+  my instvar c
+  RealtimePlot instvar taskArrowHeight
+  RealtimePlot instvar taskBarHeight
+  
+  set task [$job task]
+  set completeOld 1
+  set mutex ""
+  set color ""
+  
+  set message "[$job name]\nExecution time: \[Analysis get C $job\], Response time: \[Analysis get response $job\]"
+
+  set tags ""
+
+  parseArgs $args {message color completeOld mutex}
+
+  switch $colorTopic {
+    active {
+     if {![llength $color]} { set color [$job color] }
+     set stipple [[$job task] pattern]
+     lappend tags active
+    }
+    criticalSection {
+      if {![llength $mutex]} { error "drawRectangle for a criticalSection requires the -mutex parameter" }
+      lappend tags mutex.$mutex mutex
+      if {![llength $color]} { set color [$mutex color] }
+      set stipple [$mutex pattern]
+    }
+    default {
+      if {![llength $color]} { set color $::Settings(color.task.$colorTopic) }
+      set stipple [patternForKey $::Settings(pattern.task.$colorTopic)]
+    }
+  }
+  set dash {}
+   
+  # complete old rectangle(s)
+  if {$completeOld} {
+    set rects [$c find withtag "$job && current"]
+    foreach rect $rects {
+      my updateRect $rect $time
+      if {$colorTopic eq "criticalSection"} {
+        # check if the mutex is still locked
+        if {[lsearch [$c gettags $rect] mutex] > -1} {
+          if {[lsearch [$job mutexes] $mutex] == -1} { $c dtag $rect "current" }
+        }
+        # add an active rectangle below, if none exists
+        set rects [$c find withtag "$job && current && active"]
+        if {![llength $rects]} {
+          set tag [my drawRectangle $job $time active -message $message -completeOld 0]
+        }
+        
+      } else {
+        $c dtag $rect "current"
+      }
+    }
+  }
+  
+  # if tasks are collapsed, then do not draw the preempted boxes
+  if {$::Settings(plot.tasks) eq "collapsed" && $colorTopic eq "Preempted"} return
+  
+  my drawTask $task
+  
+  # start new rectangle
+  set x [my xForTime $time]
+  set y1 [expr [my yForJob $job] + $taskArrowHeight]
+  set y2 [expr $y1 + $taskBarHeight]
+  set tag [$c create rect $x $y1 $x $y2 -tags "scalable task.$task $job $tags current" -fill $color -stipple $stipple -dash $dash]
+  my bindTooltip $tag $message
+  
+  switch $colorTopic {
+    preempted { 
+      set rects [$c find withtag "$job && current"]
+      $c lower $tag $rects
+    }
+  }
+  
+  return $tag
+}
+
+RealtimePlot instproc drawVerticalLine {time y1 y2 args} {
+  my instvar c  
+  
+  set tags ""
+  set message ""
+  set color black
+  set dash {}
+  set arrow ""
+  set plane front
+  
+  parseArgs $args {tags message color dash arrow plane}
+  
+  set x [my xForTime $time]
+  
+  set tag [$c create line $x $y1 $x $y2 -dash $dash -fill $color -arrow $arrow -tags [concat scalable $tags]]
+  
+  switch $plane {
+    front { $c raise $tag }
+    back { $c lower $tag }
+  }
+  
+  return $tag
+}
+
+RealtimePlot instproc drawMigrationLine {time job processor} {
+  my instvar c  
+  RealtimePlot instvar taskArrowHeight
+
+  # make sure we are in collapsed mode
+  if {![checkCollapsedMode]} return
+
+  # make sure that job is actually migrating
+  if {[string match [$job processor] $processor]} return
+    
+  # the y coords depend on the relative position of the processors in the plot
+  foreach {_ fromBottom} [$c coords [$c find withtag "bottom && [$job processor]"]] break
+  foreach {_ fromTop} [$c coords [$c find withtag "top && [$job processor]"]] break
+  foreach {_ toBottom} [$c coords [$c find withtag "bottom && $processor"]] break
+  foreach {_ toTop} [$c coords [$c find withtag "top && $processor"]] break
+  
+  if {$fromBottom < $toBottom} {
+    set y1 $fromBottom
+    set y2 $toTop
+  } else {
+    set y1 $fromTop
+    set y2 $toBottom
+  }
+  
+  my drawVerticalLine $time $y1 $y2 -dash {2 4} -arrow last -plane back -tags "migrationline"
+}
+
+#
+# Draw a dashed line between two tasks. The task id may be 'top' or 'bottom', to draw
+# lines from top to bottom.
+#
+
+RealtimePlot instproc drawVerticalLineBetweenTasks {time from to args} {
+  my instvar c  
+  my instvar bottomY
+  RealtimePlot instvar taskArrowHeight
+
+  set dash {2 4}
+  set color black
+  set arrow ""
+  set plane back
+  set tags ""
+  
+  parseArgs $args {dash color arrow plane tags}
+
+  # make sure that both jobs are drawn in this plot
+  if {$from ne "top" && $from ne "bottom" && $to ne "top" && $to ne "bottom" && ![string match [$from processor] [$to processor]]} { 
+    return 
+  }
+  
+  foreach {y task} {y1 from y2 to} {
+    set task [set $task]
+    if {$task eq "top"} {
+      set $y 0
+    } elseif {$task eq "bottom"} {
+      set $y $bottomY
+    } else {
+      my drawTask $task
+      set $y [expr [my yForTask $task] + $taskArrowHeight]
+    }
+  }
+    
+  my drawVerticalLine $time $y1 $y2 -dash $dash -plane $plane -arrow $arrow -tags $tags
+}
+
+RealtimePlot instproc drawPreemptionLine {time from to} {
+  my drawVerticalLineBetweenTasks $time [$from task] [$to task] -tags "preemptionline from.[$from task] to.[$to task]"
+}
+
+RealtimePlot instproc drawText {time y text args} {
+  my instvar c  
+  
+  set tags ""
+  set color black
+  
+  parseArgs $args {tags color}
+  
+  set x [my xForTime $time]
+  
+  set tag [$c create text $x $y -text $text -fill $color -tags [concat scalable $tags]]
+}
+
+RealtimePlot instproc drawArrow {task time arrowHead args} {
+  checkClass $task Task
+
+  set kind short
+  set color black
+  set stem solid
+  set message ""
+  set processor [$task processor]
+  
+  parseArgs $args {color stem kind message processor}
+
+  my instvar c
+  RealtimePlot instvar offsetX
+  RealtimePlot instvar timeUnit
+  RealtimePlot instvar taskArrowHeight
+  RealtimePlot instvar taskBarHeight
+
+  # draw the task (if it is not drawn yet)
+  my drawTask $task
+  
+  set x [expr $offsetX + $time*$timeUnit]
+  set y1 [my yForTask $task]
+  switch $kind {
+    "short" { set y2 [expr $y1 + $taskArrowHeight] }
+    "long"  { set y2 [expr $y1 + $taskArrowHeight + $taskBarHeight] }
+    "low" {set y1 [expr $y1 + $taskArrowHeight]; set y2 [expr $y1 + $taskBarHeight] }
+    default { error "wrong -kind '$kind'. Was expecting: short, long, or low" }
+  }
+  
+  switch $stem {
+    solid { set dash {} }
+    dashed { set dash {2 4} }
+    dotted { set dash {1 2} }
+    default { error "unknown -stem '$stem'" }
+  }
+  
+  set tag [$c create line $x $y1 $x $y2 -arrow $arrowHead -fill $color -dash $dash -tags "scalable task.$task"]
+  
+  $c bind $tag <ButtonPress> "+[self] updateTimeMarker $time \n [self] timeMarkerLocked 1"
+  $c bind $tag <ButtonRelease> "+[self] timeMarkerLocked 0"
+
+  if {[llength $message]} { my bindTooltip $tag $message } 
+}
+
+RealtimePlot instproc drawHorizontalArrow {task begin end args} {
+  checkClass $task Task
+
+  set color black
+  set stem solid
+  set message ""
+  set arrow ""
+  set processor [$task processor]
+  
+  parseArgs $args {color stem message processor arrow}
+
+  my instvar c
+  RealtimePlot instvar offsetX
+  RealtimePlot instvar timeUnit
+  RealtimePlot instvar taskArrowHeight
+
+  # draw the task (if it is not drawn yet)
+  my drawTask $task
+  
+  set x1 [expr $offsetX + $begin*$timeUnit]
+  set x2 [expr $offsetX + $end*$timeUnit]
+  set y [expr [my yForTask $task] + $taskArrowHeight/2]
+  
+  if {[llength $arrow]} {
+    switch $stem {
+      solid { set dash {} }
+      dashed { set dash {2 4} }
+      dotted { set dash {1 2} }
+      default { error "unknown -stem '$stem'" }
+    }
+    
+    set tag [$c create line $x1 $y $x2 $y -arrow $arrow -fill $color -dash $dash -tags "scalable task.$task"]
+  }
+  
+  if {[llength $message]} { 
+    set x [expr $x1 + ($x2 - $x1)/2]
+    set messageTag [$c create text $x $y -text $message -fill $color -tags "scalable task.$task"]
+    foreach {x1 y1 x2 y2} [$c bbox $messageTag] break
+    set bgTag [$c create rect $x1 $y1 $x2 $y2 -fill white -outline "" -tags "background label.$messageTag"]
+    $c lower $bgTag $messageTag
+  } 
+}

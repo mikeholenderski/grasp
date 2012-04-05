@@ -1,0 +1,82 @@
+#
+# This is an example trace, demonstrating the Hierachichal Scheduling features of Grasp.
+#
+# The example presented in this trace assumes two tasks (task1 and task2) and a deferrable server
+# (server1). task1 is assigned to the deferrable server, so it should not execute beyond
+# the budget of server1. task1 has an execution time of 7 and arrives at time 20. task2 has
+# an execution time of 38 and arrives at time 5. server1 has a capacity (and initial budget) equal
+# to 5 and it is replenished at time 40.
+#
+# NOTE: this trace assumes that you are already famililar with the basic Grasp trace structure
+# and the commands for logging simple (non-hierarchical) tasks.
+#
+
+# We first create some tasks.
+
+newTask task1 -priority 7 -name "Task 1"
+newTask task2 -priority 8 -name "Task 2"
+
+# Similar to a task, we need to create a server before calling methods on it. Note that the order
+# in which tasks and servers are created does not matter, e.g. you can create servers first and
+# then the tasks.
+#
+# The newServer command takes one argument: the server id, which you use later when you refer to 
+# the server, e.g. when relenishing or depleting it. Note that the id can be pretty much any string.
+#
+# Optional parameters:
+#   -name     : a string specifying the name of the server. (default "?")
+#   -capacity : an integer specifying the time capacity of the server. (default 1)
+#   -budget   : an integer specifying the initial budget of the server. (default 0)
+
+newServer server1 -name "Deferrable server" -capacity 5 -budget 5
+
+# Now let some jobs arrive and execute.
+
+plot 5 jobArrived job2.1 task2
+plot 5 jobResumed job2.1
+plot 20 jobArrived job1.1 task1
+plot 20 jobPreempted job2.1 -target job1.1
+plot 20 jobResumed job1.1
+
+# At this point job1.1 has been resumed, so it starts consuming the budget of server1. We therefore
+# resume server1.
+#
+# serverResumed takes one argument: the id of the resumed server.
+
+plot 20 serverResumed server1
+
+# 5 time units later the budget depletes.
+#
+# serverDepleted takes one argument: the id of the depleted server. It resets server's budget to 0,
+# if it was not already 0 (e.g. in case of a polling server exhausting its workload). Note that 
+# "serverDepleted server" has the same effect as "serverReplenished server 0"
+
+plot 25 serverDepleted server1
+
+# A server should not execeed its capacity, so once it is depleted it should stop consuming its
+# budget. We therefore preempt the server. A server does not automatically get preempted upon 
+# depletion.
+#
+# serverPreempted takes one argument: the id of the preempted server.
+
+plot 25 serverPreempted server1
+
+# Since the server has been preempted, we also preempt any task ecexuting within it.
+
+plot 25 jobPreempted job1.1 -target job1.1
+plot 25 jobResumed job2.1
+
+# At time 40 server1 is replenished.
+#
+# serverReplenished takes two argumets: the id of the replenished server, and the budget which
+# the server has after replenishment.
+
+plot 40 serverReplenished server1 5
+
+plot 40 jobPreempted job2.1 -target job1.1
+plot 40 jobResumed job1.1
+plot 40 serverResumed server1
+plot 42 jobCompleted job1.1 -target job2.1
+plot 42 serverPreempted server1
+plot 42 jobResumed job2.1
+plot 50 jobCompleted job2.1

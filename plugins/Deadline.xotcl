@@ -1,0 +1,33 @@
+#
+# Draw a deadline arrow for a particular task or job at a particular time
+#
+
+RealtimePlot instproc taskDeadline {time task args} {
+  # check if task should be ignored
+  if {[Plot checkIgnore $task]} return
+
+  set message "Deadline for task '[$task name]'"
+  set arrowColor [$task deadlineColor]
+  set arrowStem [$task deadlineStem]
+  
+  parseArgs $args {message arrowColor arrowStem}
+
+  # draw an arrow, using the drawArrow method provided by the RealtimePlot class,
+  # which has the following signature:
+  #
+  # drawArrow task time head ?options? 
+  #   task : task id
+  #   time : float
+  #   head : first | last (tells where to draw the arrow head)
+  #   ?options? :
+  #     -color : tcl color, e.g. red, green, #224455
+  #     -length : short | long
+  #     -message : string (displayed when clicked on the arrow)
+  #
+  my drawArrow $task $time first -length short -color $arrowColor -stem $arrowStem -message $message
+}
+
+RealtimePlot instproc jobDeadline {time job args} {
+  set message "Deadline for job '[$job name]'"
+  eval my taskDeadline $time [$job task] [concat $args -message {$message}]
+}

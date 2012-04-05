@@ -1,0 +1,12 @@
+newTask task1 -priority 7 -name "Task 1" -arrivalColor orange -arrivalStem dotted -deadlineColor red -deadlineStem dotted
+newTask task2 -priority 8 -name "Task 2"
+plot 5 jobArrived job2.1 task2 -arrowColor blue -arrowStem dashed
+plot 5.5 jobResumed job2.1
+plot 20 jobArrived job1.1 task1
+plot 20 jobPreempted job2.1 -target job1.1
+plot 20 jobResumed job1.1
+plot 35 jobCompleted job1.1 -target job2.1
+plot 35 jobResumed job2.1
+plot 40 taskDeadline task1
+plot 45 jobDeadline job2.1 -arrowColor green -arrowStem solid
+plot 50 jobCompleted job2.1

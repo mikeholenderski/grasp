@@ -1,0 +1,126 @@
+#
+# Task
+#
+# Options:
+# -kind task | isr
+#
+
+Class Task -parameter {{name ""} {kind "task"} {priority 0} {C 0} {D 0} {T 0} {jobIndex 0} {idle 1} {behavior {}} {firstSubtask ""} {plotHeight 0} {jobs {}} {processor ""} {color ""} {pattern ""} {arrivalColor black} {arrivalStem solid} {deadlineColor black} {deadlineStem solid} }
+
+bind . <<PlotReset>> "+Task reset"
+
+Task proc reset {} {
+  foreach task [Task info instances -closure] { $task destroy }
+}
+
+Task instproc initWith {args} {
+
+  set task [self]
+
+  set color ""
+  set pattern ""
+  set name [string trim $task ":"]
+  set kind task
+  set processor main
+  set arrivalColor black
+  set arrivalStem solid
+  set deadlineColor black
+  set deadlineStem solid
+  
+  set optional {C D T kind priority behavior name processor color pattern arrivalColor arrivalStem deadlineColor deadlineStem}
+  
+  parseArgs $args $optional
+
+  # set default color, if custom color not specified
+  if {![llength $color]} {
+    switch $kind {
+      task { set color $::Settings(color.task.active) }
+      isr { set color $::Settings(color.isr.active) }
+      default { error "unknwon task kind $kind" }
+    }
+  }
+
+  # set default pattern, if custom color not specified
+  if {![llength $pattern]} {
+    set pattern $::Settings(pattern.task.active)
+  }
+    
+  foreach argument $optional {
+    if {[info exists $argument]} {
+      $task $argument [set $argument]
+    }
+  }
+
+  # make sure that the pattern is pointing to a file, in case of custom patterns
+  my pattern [patternForKey $pattern]
+
+  my set safetyJob {}
+  
+  return $task
+}
+
+proc newTask {id args} {
+  eval [Task $id] initWith $args
+}
+
+Task instproc nextJobIndex {} {
+  return [my incr jobIndex]
+}
+
+#
+# Safety job is used to overcome the tracing limitations, when a task is resumed after
+# the last job has completed before the task had the chance to execute the command logging 
+# the start of a new job.
+#
+
+Task instproc safetyJob {} {
+  # create a new job, if not already exists
+  if {![llength [my set safetyJob]]} {
+    my set safetyJob [newJob [self].safety [self] -name "[my name] in between jobs" -color $::Settings(color.task.betweenJobs)]
+  }
+  
+  return [my set safetyJob]
+}
+
+RealtimePlot instproc taskArrived {time task args} {
+  # check if task should be ignored
+  if {[Plot checkIgnore $task]} return
+  
+  set message "Task '[$task name]' arrived"
+  set color [$task arrivalColor]
+  set stem [$task arrivalStem]
+  set kind short
+  
+  parseArgs $args {processor message color stem kind}
+  
+  my drawArrow $task $time last -message $message -color $color -stem $stem  -kind $kind
+}
+
+RealtimePlot instproc taskArrivedAndIgnored {time task args} {
+  # check if task should be ignored
+  if {[Plot checkIgnore $task]} return
+ 
+  set kind short
+  
+  parseArgs $args {kind}
+
+  my drawArrow $task $time last -color grey -kind $kind
+}
+
+#
+# Draw a horizontal line until end time, just above the task bars.
+#
+
+RealtimePlot instproc taskAnnotation {time task end args} {
+  # check if task should be ignored
+  if {[Plot checkIgnore $task]} return
+  
+  set arrow ""
+  set message ""
+  set color black
+  set stem solid
+  
+  parseArgs $args {arrow message color stem}
+  
+  my drawHorizontalArrow $task $time $end -message $message -arrow $arrow -color $color -stem $stem
+}

@@ -1,0 +1,317 @@
+#
+# Server
+#
+#
+# Parameters:
+#  state : idle | active
+#
+
+Class Server -parameter { {name ""} {capacity 1} {budget 0} {priority 0} {plotY 0} {state idle} {lastTime 0} {processor ""} {budgetAtTime {}} {consumers 0} {color black} }
+
+addHandler PlotCreated "RealtimePlot updateServers %d"
+addHandler PlotUpdated "RealtimePlot updateServers %d"
+addHandler PlotReset "Server reset"
+
+Server proc reset {} {
+  foreach server [Server info instances -closure] { $server destroy }
+}
+
+Server instproc initWith {args} {
+  
+  set processor main
+  set name [string trim [self] ":"]
+
+  set optional {priority name budget capacity processor color}
+  
+  parseArgs $args $optional
+    
+  foreach argument $optional {
+    if {[info exists $argument]} {
+      my $argument [set $argument]
+    }
+  }
+    
+  return [self]
+}
+
+proc newServer {id args} {
+  eval [Server $id] initWith $args
+}
+
+Server instproc budgetToY {budget} {
+  RealtimePlot instvar serverCapacityHeight
+  if {[my capacity] == 0} {
+    error "server '[$server name]' has 0 capacity."
+  }
+  return [expr [my plotY] + $serverCapacityHeight - $serverCapacityHeight*$budget/[my capacity]]
+}
+
+#
+# RealtimePlot extentions
+#
+
+RealtimePlot instproc serverHeight {} {
+  RealtimePlot instvar serverCapacityHeight
+  RealtimePlot instvar serverMargin
+  return [expr $serverCapacityHeight + $serverMargin]
+}
+
+RealtimePlot instproc drawServer {server} {
+  # check if server is not already drawn
+  if {[lsearch [[my servers] queue] $server] > -1} return
+
+  my instvar c
+  RealtimePlot instvar offsetX
+  RealtimePlot instvar timeUnit
+  RealtimePlot instvar timelineBarHeight
+  RealtimePlot instvar timelineHeight
+  RealtimePlot instvar timelineLabelsOffsetY
+  RealtimePlot instvar serverCapacityUnit
+  RealtimePlot instvar serverYAxisArrowMargin
+  RealtimePlot instvar serverLabelOffsetX
+  RealtimePlot instvar serverMargin
+  RealtimePlot instvar serverMarginTop
+  RealtimePlot instvar serverCapacityHeight
+  my instvar bottomY
+  $server instvar plotY
+  $server instvar budget
+  
+  set server [string trimleft $server :]
+
+  # insert server into the servers list
+  [my servers] insertDescending $server priority
+  # get the level of the new server
+  foreach {_ serverOffsetY} [$c coords serverOffset] break
+  if {![info exists serverOffsetY]} {
+    set serverOffsetX $offsetX
+    incr bottomY $serverMarginTop
+    set serverOffsetY $bottomY
+    $c create text $serverOffsetX $serverOffsetY -tags "serverOffset server"
+  }
+
+  set serverHeight [my serverHeight]
+  set i [lsearch [[my servers] queue] $server]
+  $server plotY [expr $serverOffsetY + $i*$serverHeight]
+  # shift all the servers lower then the newly inserted server  
+  foreach s [lrange [[my servers] queue] [expr $i+1] end] {
+    $s plotY [expr [$s plotY]+$serverHeight]
+    $c move $s 0 $serverHeight
+  }
+  
+  # draw the lines bounding the server
+  set x $offsetX
+  set y1 $plotY
+  #$c create line $x $y1 $x $y1 -fill gray -tags "$server server bound top"
+  set y2 [expr $plotY + $serverCapacityHeight]
+  $c create line $x $y2 $x $y2 -fill black -arrow none -tags "scalable $server server bound bottom"
+  
+  # draw the y-axis
+  $c create line $x $y2 $x $y1 -tags "$server server yaxis"
+  
+  # determin how often to place the lables
+  set numMarks [expr $serverCapacityHeight/$serverCapacityUnit]
+  set labelStep [expr $numMarks/2]
+  
+  set shortX [expr $x - $timelineBarHeight/2]
+  set middleX [expr $x - $timelineBarHeight]
+  set longX [expr $x - $timelineBarHeight]
+  set labelX [expr $longX - $timelineLabelsOffsetY]
+  
+  for {set i 0} {$i <= $numMarks} {incr i} {
+    set y [expr $plotY + $serverCapacityHeight - $i*$serverCapacityUnit]
+    
+    if {$i % $labelStep} {
+      if {$i % 5} {
+        set x1 $shortX
+      } else {
+        set x1 $middleX    
+      }
+    } else {
+      set x1 $longX
+      $c create text $labelX $y -text [expr round(double($i)/$numMarks * $budget)] -anchor e -tags "$server server yaxis"
+    }
+    
+    $c create line $x1 $y $x $y -tags "$server server yaxis"
+  }
+  
+  # draw server name label, making sure it does not overlap with the y-axis labels
+  set x [expr $offsetX - $serverLabelOffsetX]
+  set y [expr $plotY + $serverCapacityHeight/2]
+  $c create text $x $y -text [$server name] -anchor e -tags "$server server name" -justify center
+
+  # allign all the server labels, so that they don't overlap with y-axis labels
+  set serverAxis [$c bbox yaxis&&server]
+  if {[llength $serverAxis]} {
+    foreach {x _ _ _} $serverAxis break
+    set x [expr $x - $serverLabelOffsetX]
+    foreach tag [$c find withtag server&&name] {
+      foreach {_ y} [$c coords $tag] break
+      $c coords $tag $x $y
+    }
+  }
+  
+  # update bottomY
+  my instvar bottomY
+  set bottomY [expr $bottomY + $serverHeight]  
+}
+
+RealtimePlot instproc updateServer {time server} {
+  # check if the server is destined for this plot
+  if {![string match [plotForProcessor [$server processor]] [string trimleft [self] :]]} return
+
+  my instvar c
+  global maxTime
+  
+  # get rid of any leading :
+  set server [string trimleft $server :]  
+
+  # check if server should be ignored
+  if {[Plot checkIgnore $server]} return
+  
+  # draw the server (if not already drawn)
+  my drawServer $server
+  
+  # update the bounds
+  
+  set x2 [my xForTime [expr $maxTime + 1]]
+  
+  set tag [$c find withtag "top && $server"]
+  if {[llength $tag] == 1} {
+    foreach {x1 y _ _} [$c coords $tag] break
+    $c coords $tag $x1 $y $x2 $y
+  } elseif {[llength $tag] > 1} {
+    error "there are several server tops with tags: 'top $server'"
+  }
+  
+  set tag [$c find withtag "bottom && $server"]
+  if {[llength $tag] == 1} {
+    foreach {x1 y _ _} [$c coords $tag] break
+    $c coords $tag $x1 $y $x2 $y
+  } elseif {[llength $tag] > 1} {
+    error "there are several server bottoms with tags: 'bottom $server'"
+  }
+  
+  # update the budget
+  $server instvar lastTime  
+  set budget [$server budget]
+  set x1 [my xForTime $lastTime]
+  set y1 [$server budgetToY $budget]
+  set x2 [my xForTime $time]
+  
+  # the endpoint of the line depends on the state of the server
+  switch -- [$server state] {
+    idle {      
+      # log the budget for the last interval
+      for {set i 0} {$i < $time - $lastTime} {incr i} {
+        $server lappend budgetAtTime $budget
+      }
+      set y2 $y1
+    }
+    active {
+      # log the budget for the last interval
+      for {set i 0} {$i < $time - $lastTime} {incr i} {
+        incr budget [expr -1*[$server consumers]]
+        $server lappend budgetAtTime $budget
+      }
+
+      #set budget [expr $budget - ($time - $lastTime)]
+      set y2 [$server budgetToY $budget]
+
+      $server budget $budget
+    }
+    default {
+      error "wrong server state '[$server state]'"
+    }
+  }
+    
+  $c create line $x1 $y1 $x2 $y2 -width 2 -fill [$server color] -tags "scalable $server server budget"
+  
+  set lastTime $time
+}
+
+RealtimePlot proc updateServers {data} {
+  set plot [lindex $data 0]
+  set time [lindex $data 1]
+  foreach server [getAllInstancesOf Server] {
+    $plot updateServer $time $server
+  }
+}
+
+RealtimePlot instproc updateTimeMarkerServers {time} {
+  my instvar c
+  global maxTime
+  RealtimePlot instvar offsetX
+  
+  # update the server budget markers for all servers
+  set time [expr round($time+0.5)-1]
+  if {!($time < 0 || $maxTime <= $time)} {  
+    foreach server [[my servers] queue] {
+      set budget [lindex [$server budgetAtTime] $time]
+      if {![llength $budget]} continue
+      set x1 $offsetX
+      set x2 [my xForTime $time]
+      set y [$server budgetToY $budget]
+      set tag [$c create line $x1 $y $x2 $y -dash {2 4} -tags timemarker]
+      $c lower $tag
+    }
+  }
+}
+
+#
+# RealtimePlot events
+#
+
+RealtimePlot instproc serverMessage {time kind message} {
+  RealtimePlot instvar serverShowMessages
+
+  if {$serverShowMessages} { 
+    my message $time $message \
+      -color $::Settings(color.message.server.$kind) \
+      -shape $::Settings(shape.message.server.$kind)
+  }
+}
+
+RealtimePlot instproc serverReplenished {time server budget args} {
+  # check if server should be ignored
+  if {[Plot checkIgnore $server]} return
+
+  my serverMessage $time replenished "replenished server $server"
+  my updateServer $time $server
+
+  # replenish server's capacity
+  $server budget $budget
+}
+
+RealtimePlot instproc serverResumed {time server args} {
+  # check if server should be ignored
+  if {[Plot checkIgnore $server]} return
+
+  my serverMessage $time resumed "resumed server $server"
+  my updateServer $time $server
+
+  $server incr consumers
+  $server state active
+}
+
+RealtimePlot instproc serverPreempted {time server args} {
+  
+  # check if server should be ignored
+  if {[Plot checkIgnore $server]} return
+
+  my serverMessage $time preempted "preempted server $server"
+  my updateServer $time $server
+
+  $server incr consumers -1
+  if {[$server consumers] == 0} { $server state idle }
+}
+
+RealtimePlot instproc serverDepleted {time server args} {
+  # check if server should be ignored
+  if {[Plot checkIgnore $server]} return
+
+  my serverMessage $time depleted "depleted server $server"
+  my updateServer $time $server
+
+  # replenish server's capacity
+  $server budget 0
+}

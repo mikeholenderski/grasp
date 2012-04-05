@@ -1,0 +1,37 @@
+newTask task1 -priority 7 -name "Task 1"
+newTask task2 -priority 8 -name "Task 2"
+plot 5 jobArrived job2.1 task2
+plot 5 jobResumed job2.1
+
+#
+# You can add annotations to tasks, which will be drawn above the task bar. An annotation can have
+# a message and an arrow. Both are optional and will be drawn only if the argument is specified.
+# The taskAnnotation command has the following signature:
+#
+#   plot <time> taskAnnotation <taskId> <endTime> ?optional?
+#
+# It accepts the following optional parameters:
+#   -message string : 
+#            If the -message argument is specified, the message will be drawn above task with id 
+#            <taskId>, centered between <time> and <endTime>.
+#   -arrow none | first | last | both : 
+#            If the -arrow argument is specified, then the an arrow will alwo be drawn above task
+#            with id <taskId>, starting at time <time> and ending at time <endTime>, with
+#            no arrow heads (none), arrow head at <time> (first), arrow head at <endTime>, or arrow
+#            head at both <time> and <endTime>.
+#   -color color :
+#            Color of the message and arrow.
+#   -stem solid | dashed | dotted :
+#            Stem of the arrow, if -arrow was specified.
+#
+
+plot 5 taskAnnotation task1 30 -message "Test 1" -arrow both -color blue -stem dashed
+
+plot 30 jobArrived job1.1 task1
+plot 30 jobPreempted job2.1 -target job1.1
+plot 30 jobResumed job1.1
+plot 40 taskAnnotation task2 45 -message "Test 2"
+plot 55 jobCompleted job1.1 -target job2.1
+plot 55 jobResumed job2.1
+plot 55 taskAnnotation task2 75 -arrow both
+plot 75 jobCompleted job2.1

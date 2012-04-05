@@ -1,0 +1,8 @@
+newTask task
+newServer server -capacity 10 -budget 10
+plot 10 jobArrived job task
+plot 10 jobResumed job
+plot 10 serverResumed server
+plot 30 jobCompleted job
+plot 30 serverPreempted server
+plot 50 nop

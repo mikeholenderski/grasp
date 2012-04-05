@@ -1,0 +1,2044 @@
+#
+# Swift mode changes simulation
+# Task parameters:
+#   Network:  T=50 C=3
+#   Decoder:  T=X  C=24
+#   Renderer: T=50 C=3
+#   QMC:      T=53 C=0
+# M=4 (low) 4 (high)
+# Scaling protocol: 1
+# Renderer strictly periodic: 2
+#
+[Task Task0x138854] initWith -priority 5 -name "Setup"
+[Job Job0x138854_0] initWithTask Task0x138854 -name "Setup 0"
+[Task Task0x138a24] initWith -priority 6 -name "QM"
+[Job Job0x138a24_0] initWithTask Task0x138a24 -name "QM 0"
+[Task Task0x1389b0] initWith -priority 8 -name "Network"
+[Job Job0x1389b0_0] initWithTask Task0x1389b0 -name "Network 0"
+[Task Task0x13893c] initWith -priority 9 -name "Renderer"
+[Job Job0x13893c_0] initWithTask Task0x13893c -name "Renderer 0"
+[Task Task0x1388c8] initWith -priority 10 -name "Decoder"
+[Job Job0x1388c8_0] initWithTask Task0x1388c8 -name "Decoder 0"
+[Task Task0x1387e0] initWith -priority 63 -name "Idle"
+[Job Job0x1387e0_67126880] initWithTask Task0x1387e0 -name "Idle 67126880"
+
+newBuffer Buffer0x36150 -seqNumber 0 -name "Encoded Buffer"
+newBuffer Buffer0x36190 -seqNumber 1 -name "Decoded Buffer"
+bufferplot 0 structure {Task0x1389b0 Buffer0x36150 Task0x1388c8 Buffer0x36190 Task0x13893c}
+
+plot 0 taskArrived Task0x138a24
+plot 0 taskArrived Task0x1389b0
+bufferplot 0 resize Buffer0x36150 5
+bufferplot 0 resize Buffer0x36190 5
+plot 0 jobPreempted Job0x138854_0 -target Job0x138854_0
+plot 0 jobResumed Job0x138854_0
+plot 0 jobPreempted Job0x138854_0 -target Job0x138a24_0
+plot 0 jobResumed Job0x138a24_0
+plot 0 message {Task 'QM' missed its deadline}
+plot 0 jobPreempted Job0x138a24_0 -target Job0x1389b0_0
+plot 0 jobResumed Job0x1389b0_0
+plot 0 jobCompleted Job0x1389b0_0
+plot 0 message {Task 'Network' missed its deadline}
+[Job Job0x1389b0_1] initWithTask Task0x1389b0 -name "Network 1"
+plot 0 jobResumed Job0x1389b0_1
+bufferplot 3 push Buffer0x36150 "0\nI"
+plot 3 jobCompleted Job0x1389b0_1
+plot 3 jobPreempted Job0x1389b0_1 -target Job0x13893c_0
+plot 3 jobResumed Job0x13893c_0
+plot 3 jobCompleted Job0x13893c_0
+plot 3 jobPreempted Job0x13893c_0 -target Job0x1388c8_0
+plot 3 jobResumed Job0x1388c8_0
+plot 3 taskArrived Task0x1388c8
+[Job Job0x1388c8_1] initWithTask Task0x1388c8 -name "Decoder 1"
+plot 3 jobResumed Job0x1388c8_1
+plot 3 message {executing for 24}
+bufferplot 27 push Buffer0x36190 "0\nI"
+bufferplot 27 pop Buffer0x36150
+plot 27 jobCompleted Job0x1388c8_1
+plot 27 taskArrived Task0x1388c8
+[Job Job0x1388c8_2] initWithTask Task0x1388c8 -name "Decoder 2"
+plot 27 jobResumed Job0x1388c8_2
+plot 27 jobPreempted Job0x1388c8_2 -target Job0x1387e0_67126880
+plot 27 jobResumed Job0x1387e0_67126880
+plot 50 taskArrived Task0x1389b0
+plot 50 relteqEvent period "Network"
+plot 50 taskArrived Task0x13893c
+plot 50 relteqEvent period "Renderer"
+plot 50 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_1
+plot 50 jobResumed Job0x1389b0_1
+[Job Job0x1389b0_2] initWithTask Task0x1389b0 -name "Network 2"
+plot 50 jobResumed Job0x1389b0_2
+plot 53 taskArrived Task0x138a24
+plot 53 relteqEvent period "QM"
+plot 53 analysisLatencyStart
+plot 53 jobPreempted Job0x1389b0_2 -target Job0x138a24_0
+plot 53 jobResumed Job0x138a24_0
+plot 53 message {waiting for Decoder using component BufferDecoded}
+plot 53 jobPreempted Job0x138a24_0 -target Job0x1389b0_2
+plot 53 jobResumed Job0x1389b0_2
+bufferplot 53 push Buffer0x36150 "1\nB"
+plot 53 jobPreempted Job0x1389b0_2 -target Job0x1388c8_2
+plot 53 jobResumed Job0x1388c8_2
+plot 53 message {executing for 24}
+bufferplot 77 push Buffer0x36190 "1\nB"
+bufferplot 77 pop Buffer0x36150
+plot 77 jobCompleted Job0x1388c8_2
+plot 77 jobPreempted Job0x1388c8_2 -target Job0x138a24_0
+plot 77 jobResumed Job0x138a24_0
+plot 77 message {waiting for Network using component Network}
+plot 77 jobPreempted Job0x138a24_0 -target Job0x1389b0_2
+plot 77 jobResumed Job0x1389b0_2
+plot 77 jobCompleted Job0x1389b0_2
+plot 77 jobPreempted Job0x1389b0_2 -target Job0x138a24_0
+plot 77 jobResumed Job0x138a24_0
+plot 77 message {start mode change} -color green
+plot 77 message {stop mode change} -color orange
+plot 77 analysisLatencyStop
+plot 77 jobPreempted Job0x138a24_0 -target Job0x1389b0_2
+plot 77 jobResumed Job0x1389b0_2
+plot 77 jobPreempted Job0x1389b0_2 -target Job0x13893c_0
+plot 77 jobResumed Job0x13893c_0
+[Job Job0x13893c_1] initWithTask Task0x13893c -name "Renderer 1"
+plot 77 jobResumed Job0x13893c_1
+bufferplot 80 pop Buffer0x36190
+plot 80 analysisRendered 0 I
+plot 80 jobCompleted Job0x13893c_1
+plot 80 jobPreempted Job0x13893c_1 -target Job0x1388c8_2
+plot 80 jobResumed Job0x1388c8_2
+plot 80 taskArrived Task0x1388c8
+[Job Job0x1388c8_3] initWithTask Task0x1388c8 -name "Decoder 3"
+plot 80 jobResumed Job0x1388c8_3
+plot 80 jobPreempted Job0x1388c8_3 -target Job0x1387e0_67126880
+plot 80 jobResumed Job0x1387e0_67126880
+plot 100 taskArrived Task0x1389b0
+plot 100 relteqEvent period "Network"
+plot 100 taskArrived Task0x13893c
+plot 100 relteqEvent period "Renderer"
+plot 100 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_2
+plot 100 jobResumed Job0x1389b0_2
+[Job Job0x1389b0_3] initWithTask Task0x1389b0 -name "Network 3"
+plot 100 jobResumed Job0x1389b0_3
+bufferplot 103 push Buffer0x36150 "2\nB"
+plot 103 jobCompleted Job0x1389b0_3
+plot 103 jobPreempted Job0x1389b0_3 -target Job0x13893c_1
+plot 103 jobResumed Job0x13893c_1
+[Job Job0x13893c_2] initWithTask Task0x13893c -name "Renderer 2"
+plot 103 jobResumed Job0x13893c_2
+plot 106 taskArrived Task0x138a24
+plot 106 relteqEvent period "QM"
+plot 106 analysisLatencyStart
+plot 106 jobPreempted Job0x13893c_2 -target Job0x138a24_0
+plot 106 jobResumed Job0x138a24_0
+plot 106 message {waiting for Renderer using component BufferDecoded}
+plot 106 jobPreempted Job0x138a24_0 -target Job0x13893c_2
+plot 106 jobResumed Job0x13893c_2
+bufferplot 106 pop Buffer0x36190
+plot 106 analysisRendered 1 B
+plot 106 jobCompleted Job0x13893c_2
+plot 106 jobPreempted Job0x13893c_2 -target Job0x138a24_0
+plot 106 jobResumed Job0x138a24_0
+plot 106 message {waiting for Decoder using component BufferDecoded}
+plot 106 jobPreempted Job0x138a24_0 -target Job0x1388c8_3
+plot 106 jobResumed Job0x1388c8_3
+plot 106 message {executing for 24}
+bufferplot 130 push Buffer0x36190 "2\nB"
+bufferplot 131 push Buffer0x36190 "2\nB"
+bufferplot 131 pop Buffer0x36150
+plot 131 jobPreempted Job0x1388c8_3 -target Job0x13893c_2
+plot 131 jobResumed Job0x13893c_2
+plot 131 jobPreempted Job0x13893c_2 -target Job0x1387e0_67126880
+plot 131 jobResumed Job0x1387e0_67126880
+plot 150 taskArrived Task0x1389b0
+plot 150 relteqEvent period "Network"
+plot 150 taskArrived Task0x13893c
+plot 150 relteqEvent period "Renderer"
+plot 150 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_3
+plot 150 jobResumed Job0x1389b0_3
+[Job Job0x1389b0_4] initWithTask Task0x1389b0 -name "Network 4"
+plot 150 jobResumed Job0x1389b0_4
+bufferplot 153 push Buffer0x36150 "3\nP"
+plot 153 jobPreempted Job0x1389b0_4 -target Job0x1388c8_3
+plot 153 jobResumed Job0x1388c8_3
+plot 153 jobCompleted Job0x1388c8_3
+plot 153 jobPreempted Job0x1388c8_3 -target Job0x138a24_0
+plot 153 jobResumed Job0x138a24_0
+plot 153 message {waiting for Network using component Network}
+plot 153 jobPreempted Job0x138a24_0 -target Job0x1389b0_4
+plot 153 jobResumed Job0x1389b0_4
+plot 153 jobCompleted Job0x1389b0_4
+plot 153 jobPreempted Job0x1389b0_4 -target Job0x138a24_0
+plot 153 jobResumed Job0x138a24_0
+plot 153 message {start mode change} -color green
+plot 153 message {stop mode change} -color orange
+plot 153 analysisLatencyStop
+plot 153 jobPreempted Job0x138a24_0 -target Job0x1389b0_4
+plot 153 jobResumed Job0x1389b0_4
+plot 153 jobPreempted Job0x1389b0_4 -target Job0x13893c_2
+plot 153 jobResumed Job0x13893c_2
+[Job Job0x13893c_3] initWithTask Task0x13893c -name "Renderer 3"
+plot 153 jobResumed Job0x13893c_3
+bufferplot 156 pop Buffer0x36190
+bufferplot 156 pop Buffer0x36190
+plot 156 analysisRendered 2 B
+plot 156 jobCompleted Job0x13893c_3
+plot 156 jobPreempted Job0x13893c_3 -target Job0x1388c8_3
+plot 156 jobResumed Job0x1388c8_3
+plot 156 taskArrived Task0x1388c8
+[Job Job0x1388c8_4] initWithTask Task0x1388c8 -name "Decoder 4"
+plot 156 jobResumed Job0x1388c8_4
+plot 156 jobPreempted Job0x1388c8_4 -target Job0x1387e0_67126880
+plot 156 jobResumed Job0x1387e0_67126880
+plot 159 taskArrived Task0x138a24
+plot 159 relteqEvent period "QM"
+plot 159 analysisLatencyStart
+plot 159 jobPreempted Job0x1387e0_67126880 -target Job0x138a24_0
+plot 159 jobResumed Job0x138a24_0
+plot 159 message {waiting for Decoder using component BufferDecoded}
+plot 159 jobPreempted Job0x138a24_0 -target Job0x1387e0_67126880
+plot 159 jobResumed Job0x1387e0_67126880
+plot 200 taskArrived Task0x1389b0
+plot 200 relteqEvent period "Network"
+plot 200 taskArrived Task0x13893c
+plot 200 relteqEvent period "Renderer"
+plot 200 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_4
+plot 200 jobResumed Job0x1389b0_4
+[Job Job0x1389b0_5] initWithTask Task0x1389b0 -name "Network 5"
+plot 200 jobResumed Job0x1389b0_5
+bufferplot 203 push Buffer0x36150 "4\nB"
+plot 203 jobPreempted Job0x1389b0_5 -target Job0x1388c8_4
+plot 203 jobResumed Job0x1388c8_4
+plot 203 message {executing for 24}
+plot 212 taskArrived Task0x138a24
+plot 212 relteqEvent period "QM"
+plot 212 analysisLatencyStart
+bufferplot 227 push Buffer0x36190 "3\nP"
+bufferplot 227 pop Buffer0x36150
+plot 227 jobCompleted Job0x1388c8_4
+plot 227 jobPreempted Job0x1388c8_4 -target Job0x138a24_0
+plot 227 jobResumed Job0x138a24_0
+plot 227 message {waiting for Network using component Network}
+plot 227 jobPreempted Job0x138a24_0 -target Job0x1389b0_5
+plot 227 jobResumed Job0x1389b0_5
+plot 227 jobCompleted Job0x1389b0_5
+plot 227 jobPreempted Job0x1389b0_5 -target Job0x138a24_0
+plot 227 jobResumed Job0x138a24_0
+plot 227 message {start mode change} -color green
+plot 227 message {stop mode change} -color orange
+plot 227 analysisLatencyStop
+plot 227 message {Task 'QM' missed its deadline}
+plot 227 message {start mode change} -color green
+plot 227 message {stop mode change} -color orange
+plot 227 analysisLatencyStop
+plot 227 jobPreempted Job0x138a24_0 -target Job0x1389b0_5
+plot 227 jobResumed Job0x1389b0_5
+plot 227 jobPreempted Job0x1389b0_5 -target Job0x13893c_3
+plot 227 jobResumed Job0x13893c_3
+[Job Job0x13893c_4] initWithTask Task0x13893c -name "Renderer 4"
+plot 227 jobResumed Job0x13893c_4
+bufferplot 231 pop Buffer0x36190
+plot 231 analysisRendered 3 P
+plot 231 jobCompleted Job0x13893c_4
+plot 231 jobPreempted Job0x13893c_4 -target Job0x1388c8_4
+plot 231 jobResumed Job0x1388c8_4
+plot 231 taskArrived Task0x1388c8
+[Job Job0x1388c8_5] initWithTask Task0x1388c8 -name "Decoder 5"
+plot 231 jobResumed Job0x1388c8_5
+plot 231 jobPreempted Job0x1388c8_5 -target Job0x1387e0_67126880
+plot 231 jobResumed Job0x1387e0_67126880
+plot 250 taskArrived Task0x1389b0
+plot 250 relteqEvent period "Network"
+plot 250 taskArrived Task0x13893c
+plot 250 relteqEvent period "Renderer"
+plot 250 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_5
+plot 250 jobResumed Job0x1389b0_5
+[Job Job0x1389b0_6] initWithTask Task0x1389b0 -name "Network 6"
+plot 250 jobResumed Job0x1389b0_6
+bufferplot 253 push Buffer0x36150 "5\nB"
+plot 253 jobCompleted Job0x1389b0_6
+plot 253 jobPreempted Job0x1389b0_6 -target Job0x13893c_4
+plot 253 jobResumed Job0x13893c_4
+[Job Job0x13893c_5] initWithTask Task0x13893c -name "Renderer 5"
+plot 253 jobResumed Job0x13893c_5
+plot 256 message {Renderer received NULL packet, rendering last frame}
+plot 256 analysisRendered 3 P
+plot 256 jobCompleted Job0x13893c_5
+plot 256 jobPreempted Job0x13893c_5 -target Job0x1388c8_5
+plot 256 jobResumed Job0x1388c8_5
+plot 256 message {executing for 24}
+plot 265 taskArrived Task0x138a24
+plot 265 relteqEvent period "QM"
+plot 265 analysisLatencyStart
+plot 265 jobPreempted Job0x1388c8_5 -target Job0x138a24_0
+plot 265 jobResumed Job0x138a24_0
+plot 265 message {waiting for Decoder using component BufferDecoded}
+plot 265 jobPreempted Job0x138a24_0 -target Job0x1388c8_5
+plot 265 jobResumed Job0x1388c8_5
+bufferplot 280 push Buffer0x36190 "4\nB"
+bufferplot 280 pop Buffer0x36150
+plot 280 jobCompleted Job0x1388c8_5
+plot 280 jobPreempted Job0x1388c8_5 -target Job0x138a24_0
+plot 280 jobResumed Job0x138a24_0
+plot 280 message {start mode change} -color green
+plot 280 message {stop mode change} -color orange
+plot 280 analysisLatencyStop
+plot 280 jobPreempted Job0x138a24_0 -target Job0x1388c8_5
+plot 280 jobResumed Job0x1388c8_5
+plot 280 taskArrived Task0x1388c8
+[Job Job0x1388c8_6] initWithTask Task0x1388c8 -name "Decoder 6"
+plot 280 jobResumed Job0x1388c8_6
+plot 280 jobPreempted Job0x1388c8_6 -target Job0x1387e0_67126880
+plot 280 jobResumed Job0x1387e0_67126880
+plot 300 taskArrived Task0x1389b0
+plot 300 relteqEvent period "Network"
+plot 300 taskArrived Task0x13893c
+plot 300 relteqEvent period "Renderer"
+plot 300 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_6
+plot 300 jobResumed Job0x1389b0_6
+[Job Job0x1389b0_7] initWithTask Task0x1389b0 -name "Network 7"
+plot 300 jobResumed Job0x1389b0_7
+bufferplot 303 push Buffer0x36150 "6\nI"
+plot 303 jobCompleted Job0x1389b0_7
+plot 303 jobPreempted Job0x1389b0_7 -target Job0x13893c_5
+plot 303 jobResumed Job0x13893c_5
+[Job Job0x13893c_6] initWithTask Task0x13893c -name "Renderer 6"
+plot 303 jobResumed Job0x13893c_6
+bufferplot 306 pop Buffer0x36190
+plot 306 analysisRendered 4 B
+plot 306 jobCompleted Job0x13893c_6
+plot 306 jobPreempted Job0x13893c_6 -target Job0x1388c8_6
+plot 306 jobResumed Job0x1388c8_6
+plot 306 message {executing for 24}
+plot 318 taskArrived Task0x138a24
+plot 318 relteqEvent period "QM"
+plot 318 analysisLatencyStart
+plot 318 jobPreempted Job0x1388c8_6 -target Job0x138a24_0
+plot 318 jobResumed Job0x138a24_0
+plot 318 message {waiting for Decoder using component BufferDecoded}
+plot 318 jobPreempted Job0x138a24_0 -target Job0x1388c8_6
+plot 318 jobResumed Job0x1388c8_6
+bufferplot 330 push Buffer0x36190 "5\nB"
+bufferplot 331 push Buffer0x36190 "5\nB"
+bufferplot 331 pop Buffer0x36150
+plot 331 jobCompleted Job0x1388c8_6
+plot 331 jobPreempted Job0x1388c8_6 -target Job0x138a24_0
+plot 331 jobResumed Job0x138a24_0
+plot 331 message {start mode change} -color green
+plot 331 message {stop mode change} -color orange
+plot 331 analysisLatencyStop
+plot 331 jobPreempted Job0x138a24_0 -target Job0x1388c8_6
+plot 331 jobResumed Job0x1388c8_6
+plot 331 taskArrived Task0x1388c8
+[Job Job0x1388c8_7] initWithTask Task0x1388c8 -name "Decoder 7"
+plot 331 jobResumed Job0x1388c8_7
+plot 331 jobPreempted Job0x1388c8_7 -target Job0x1387e0_67126880
+plot 331 jobResumed Job0x1387e0_67126880
+plot 350 taskArrived Task0x1389b0
+plot 350 relteqEvent period "Network"
+plot 350 taskArrived Task0x13893c
+plot 350 relteqEvent period "Renderer"
+plot 350 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_7
+plot 350 jobResumed Job0x1389b0_7
+[Job Job0x1389b0_8] initWithTask Task0x1389b0 -name "Network 8"
+plot 350 jobResumed Job0x1389b0_8
+bufferplot 353 push Buffer0x36150 "7\nB"
+plot 353 jobCompleted Job0x1389b0_8
+plot 353 jobPreempted Job0x1389b0_8 -target Job0x13893c_6
+plot 353 jobResumed Job0x13893c_6
+[Job Job0x13893c_7] initWithTask Task0x13893c -name "Renderer 7"
+plot 353 jobResumed Job0x13893c_7
+bufferplot 356 pop Buffer0x36190
+bufferplot 356 pop Buffer0x36190
+plot 356 analysisRendered 5 B
+plot 356 jobCompleted Job0x13893c_7
+plot 356 jobPreempted Job0x13893c_7 -target Job0x1388c8_7
+plot 356 jobResumed Job0x1388c8_7
+plot 356 message {executing for 24}
+plot 371 taskArrived Task0x138a24
+plot 371 relteqEvent period "QM"
+plot 371 analysisLatencyStart
+plot 371 jobPreempted Job0x1388c8_7 -target Job0x138a24_0
+plot 371 jobResumed Job0x138a24_0
+plot 371 message {waiting for Decoder using component BufferDecoded}
+plot 371 jobPreempted Job0x138a24_0 -target Job0x1388c8_7
+plot 371 jobResumed Job0x1388c8_7
+bufferplot 381 push Buffer0x36190 "6\nI"
+bufferplot 381 pop Buffer0x36150
+plot 381 jobCompleted Job0x1388c8_7
+plot 381 jobPreempted Job0x1388c8_7 -target Job0x138a24_0
+plot 381 jobResumed Job0x138a24_0
+plot 381 message {start mode change} -color green
+plot 381 message {stop mode change} -color orange
+plot 381 analysisLatencyStop
+plot 381 jobPreempted Job0x138a24_0 -target Job0x1388c8_7
+plot 381 jobResumed Job0x1388c8_7
+plot 381 taskArrived Task0x1388c8
+[Job Job0x1388c8_8] initWithTask Task0x1388c8 -name "Decoder 8"
+plot 381 jobResumed Job0x1388c8_8
+plot 381 jobPreempted Job0x1388c8_8 -target Job0x1387e0_67126880
+plot 381 jobResumed Job0x1387e0_67126880
+plot 400 taskArrived Task0x1389b0
+plot 400 relteqEvent period "Network"
+plot 400 taskArrived Task0x13893c
+plot 400 relteqEvent period "Renderer"
+plot 400 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_8
+plot 400 jobResumed Job0x1389b0_8
+[Job Job0x1389b0_9] initWithTask Task0x1389b0 -name "Network 9"
+plot 400 jobResumed Job0x1389b0_9
+bufferplot 403 push Buffer0x36150 "8\nB"
+plot 403 jobCompleted Job0x1389b0_9
+plot 403 jobPreempted Job0x1389b0_9 -target Job0x13893c_7
+plot 403 jobResumed Job0x13893c_7
+[Job Job0x13893c_8] initWithTask Task0x13893c -name "Renderer 8"
+plot 403 jobResumed Job0x13893c_8
+bufferplot 406 pop Buffer0x36190
+plot 406 analysisRendered 6 I
+plot 406 jobCompleted Job0x13893c_8
+plot 406 jobPreempted Job0x13893c_8 -target Job0x1388c8_8
+plot 406 jobResumed Job0x1388c8_8
+plot 406 message {executing for 24}
+plot 424 taskArrived Task0x138a24
+plot 424 relteqEvent period "QM"
+plot 424 analysisLatencyStart
+plot 424 jobPreempted Job0x1388c8_8 -target Job0x138a24_0
+plot 424 jobResumed Job0x138a24_0
+plot 424 message {waiting for Decoder using component BufferDecoded}
+plot 424 jobPreempted Job0x138a24_0 -target Job0x1388c8_8
+plot 424 jobResumed Job0x1388c8_8
+bufferplot 430 push Buffer0x36190 "7\nB"
+bufferplot 431 push Buffer0x36190 "7\nB"
+bufferplot 431 pop Buffer0x36150
+plot 431 jobCompleted Job0x1388c8_8
+plot 431 jobPreempted Job0x1388c8_8 -target Job0x138a24_0
+plot 431 jobResumed Job0x138a24_0
+plot 431 message {start mode change} -color green
+plot 431 message {stop mode change} -color orange
+plot 431 analysisLatencyStop
+plot 431 jobPreempted Job0x138a24_0 -target Job0x1388c8_8
+plot 431 jobResumed Job0x1388c8_8
+plot 431 taskArrived Task0x1388c8
+[Job Job0x1388c8_9] initWithTask Task0x1388c8 -name "Decoder 9"
+plot 431 jobResumed Job0x1388c8_9
+plot 431 jobPreempted Job0x1388c8_9 -target Job0x1387e0_67126880
+plot 431 jobResumed Job0x1387e0_67126880
+plot 450 taskArrived Task0x1389b0
+plot 450 relteqEvent period "Network"
+plot 450 taskArrived Task0x13893c
+plot 450 relteqEvent period "Renderer"
+plot 450 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_9
+plot 450 jobResumed Job0x1389b0_9
+[Job Job0x1389b0_10] initWithTask Task0x1389b0 -name "Network 10"
+plot 450 jobResumed Job0x1389b0_10
+bufferplot 453 push Buffer0x36150 "9\nP"
+plot 453 jobCompleted Job0x1389b0_10
+plot 453 jobPreempted Job0x1389b0_10 -target Job0x13893c_8
+plot 453 jobResumed Job0x13893c_8
+[Job Job0x13893c_9] initWithTask Task0x13893c -name "Renderer 9"
+plot 453 jobResumed Job0x13893c_9
+bufferplot 456 pop Buffer0x36190
+bufferplot 456 pop Buffer0x36190
+plot 456 analysisRendered 7 B
+plot 456 jobCompleted Job0x13893c_9
+plot 456 jobPreempted Job0x13893c_9 -target Job0x1388c8_9
+plot 456 jobResumed Job0x1388c8_9
+plot 456 message {executing for 24}
+plot 477 taskArrived Task0x138a24
+plot 477 relteqEvent period "QM"
+plot 477 analysisLatencyStart
+plot 477 jobPreempted Job0x1388c8_9 -target Job0x138a24_0
+plot 477 jobResumed Job0x138a24_0
+plot 477 message {waiting for Decoder using component BufferDecoded}
+plot 477 jobPreempted Job0x138a24_0 -target Job0x1388c8_9
+plot 477 jobResumed Job0x1388c8_9
+bufferplot 481 push Buffer0x36190 "8\nB"
+bufferplot 481 pop Buffer0x36150
+plot 481 jobCompleted Job0x1388c8_9
+plot 481 jobPreempted Job0x1388c8_9 -target Job0x138a24_0
+plot 481 jobResumed Job0x138a24_0
+plot 481 message {start mode change} -color green
+plot 481 message {stop mode change} -color orange
+plot 481 analysisLatencyStop
+plot 481 jobPreempted Job0x138a24_0 -target Job0x1388c8_9
+plot 481 jobResumed Job0x1388c8_9
+plot 481 taskArrived Task0x1388c8
+[Job Job0x1388c8_10] initWithTask Task0x1388c8 -name "Decoder 10"
+plot 481 jobResumed Job0x1388c8_10
+plot 481 jobPreempted Job0x1388c8_10 -target Job0x1387e0_67126880
+plot 481 jobResumed Job0x1387e0_67126880
+plot 500 taskArrived Task0x1389b0
+plot 500 relteqEvent period "Network"
+plot 500 taskArrived Task0x13893c
+plot 500 relteqEvent period "Renderer"
+plot 500 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_10
+plot 500 jobResumed Job0x1389b0_10
+[Job Job0x1389b0_11] initWithTask Task0x1389b0 -name "Network 11"
+plot 500 jobResumed Job0x1389b0_11
+bufferplot 503 push Buffer0x36150 "10\nB"
+plot 503 jobCompleted Job0x1389b0_11
+plot 503 jobPreempted Job0x1389b0_11 -target Job0x13893c_9
+plot 503 jobResumed Job0x13893c_9
+[Job Job0x13893c_10] initWithTask Task0x13893c -name "Renderer 10"
+plot 503 jobResumed Job0x13893c_10
+bufferplot 506 pop Buffer0x36190
+plot 506 analysisRendered 8 B
+plot 506 jobCompleted Job0x13893c_10
+plot 506 jobPreempted Job0x13893c_10 -target Job0x1388c8_10
+plot 506 jobResumed Job0x1388c8_10
+plot 506 message {executing for 24}
+plot 530 taskArrived Task0x138a24
+plot 530 relteqEvent period "QM"
+plot 530 analysisLatencyStart
+plot 530 jobPreempted Job0x1388c8_10 -target Job0x138a24_0
+plot 530 jobResumed Job0x138a24_0
+plot 530 message {waiting for Decoder using component BufferDecoded}
+plot 530 jobPreempted Job0x138a24_0 -target Job0x1388c8_10
+plot 530 jobResumed Job0x1388c8_10
+bufferplot 530 push Buffer0x36190 "9\nP"
+bufferplot 531 push Buffer0x36190 "9\nP"
+bufferplot 531 pop Buffer0x36150
+plot 531 jobCompleted Job0x1388c8_10
+plot 531 jobPreempted Job0x1388c8_10 -target Job0x138a24_0
+plot 531 jobResumed Job0x138a24_0
+plot 531 message {start mode change} -color green
+plot 531 message {stop mode change} -color orange
+plot 531 analysisLatencyStop
+plot 531 jobPreempted Job0x138a24_0 -target Job0x1388c8_10
+plot 531 jobResumed Job0x1388c8_10
+plot 531 taskArrived Task0x1388c8
+[Job Job0x1388c8_11] initWithTask Task0x1388c8 -name "Decoder 11"
+plot 531 jobResumed Job0x1388c8_11
+plot 531 jobPreempted Job0x1388c8_11 -target Job0x1387e0_67126880
+plot 531 jobResumed Job0x1387e0_67126880
+plot 550 taskArrived Task0x1389b0
+plot 550 relteqEvent period "Network"
+plot 550 taskArrived Task0x13893c
+plot 550 relteqEvent period "Renderer"
+plot 550 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_11
+plot 550 jobResumed Job0x1389b0_11
+[Job Job0x1389b0_12] initWithTask Task0x1389b0 -name "Network 12"
+plot 550 jobResumed Job0x1389b0_12
+bufferplot 553 push Buffer0x36150 "11\nB"
+plot 553 jobCompleted Job0x1389b0_12
+plot 553 jobPreempted Job0x1389b0_12 -target Job0x13893c_10
+plot 553 jobResumed Job0x13893c_10
+[Job Job0x13893c_11] initWithTask Task0x13893c -name "Renderer 11"
+plot 553 jobResumed Job0x13893c_11
+bufferplot 556 pop Buffer0x36190
+bufferplot 556 pop Buffer0x36190
+plot 556 analysisRendered 9 P
+plot 556 jobCompleted Job0x13893c_11
+plot 556 jobPreempted Job0x13893c_11 -target Job0x1388c8_11
+plot 556 jobResumed Job0x1388c8_11
+plot 556 message {executing for 24}
+bufferplot 581 push Buffer0x36190 "10\nB"
+bufferplot 581 pop Buffer0x36150
+plot 581 jobCompleted Job0x1388c8_11
+plot 581 taskArrived Task0x1388c8
+[Job Job0x1388c8_12] initWithTask Task0x1388c8 -name "Decoder 12"
+plot 581 jobResumed Job0x1388c8_12
+plot 581 jobPreempted Job0x1388c8_12 -target Job0x1387e0_67126880
+plot 581 jobResumed Job0x1387e0_67126880
+plot 583 taskArrived Task0x138a24
+plot 583 relteqEvent period "QM"
+plot 583 analysisLatencyStart
+plot 583 jobPreempted Job0x1387e0_67126880 -target Job0x138a24_0
+plot 583 jobResumed Job0x138a24_0
+plot 583 message {waiting for Decoder using component BufferDecoded}
+plot 583 jobPreempted Job0x138a24_0 -target Job0x1387e0_67126880
+plot 583 jobResumed Job0x1387e0_67126880
+plot 600 taskArrived Task0x1389b0
+plot 600 relteqEvent period "Network"
+plot 600 taskArrived Task0x13893c
+plot 600 relteqEvent period "Renderer"
+plot 600 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_12
+plot 600 jobResumed Job0x1389b0_12
+[Job Job0x1389b0_13] initWithTask Task0x1389b0 -name "Network 13"
+plot 600 jobResumed Job0x1389b0_13
+bufferplot 603 push Buffer0x36150 "12\nI"
+plot 603 jobPreempted Job0x1389b0_13 -target Job0x1388c8_12
+plot 603 jobResumed Job0x1388c8_12
+plot 603 message {executing for 24}
+bufferplot 627 push Buffer0x36190 "11\nB"
+bufferplot 627 pop Buffer0x36150
+plot 627 jobCompleted Job0x1388c8_12
+plot 627 jobPreempted Job0x1388c8_12 -target Job0x138a24_0
+plot 627 jobResumed Job0x138a24_0
+plot 627 message {waiting for Network using component Network}
+plot 627 jobPreempted Job0x138a24_0 -target Job0x1389b0_13
+plot 627 jobResumed Job0x1389b0_13
+plot 627 jobCompleted Job0x1389b0_13
+plot 627 jobPreempted Job0x1389b0_13 -target Job0x138a24_0
+plot 627 jobResumed Job0x138a24_0
+plot 627 message {start mode change} -color green
+plot 627 message {stop mode change} -color orange
+plot 627 analysisLatencyStop
+plot 627 jobPreempted Job0x138a24_0 -target Job0x1389b0_13
+plot 627 jobResumed Job0x1389b0_13
+plot 627 jobPreempted Job0x1389b0_13 -target Job0x13893c_11
+plot 627 jobResumed Job0x13893c_11
+[Job Job0x13893c_12] initWithTask Task0x13893c -name "Renderer 12"
+plot 627 jobResumed Job0x13893c_12
+bufferplot 631 pop Buffer0x36190
+plot 631 analysisRendered 10 B
+plot 631 jobCompleted Job0x13893c_12
+plot 631 jobPreempted Job0x13893c_12 -target Job0x1388c8_12
+plot 631 jobResumed Job0x1388c8_12
+plot 631 taskArrived Task0x1388c8
+[Job Job0x1388c8_13] initWithTask Task0x1388c8 -name "Decoder 13"
+plot 631 jobResumed Job0x1388c8_13
+plot 631 jobPreempted Job0x1388c8_13 -target Job0x1387e0_67126880
+plot 631 jobResumed Job0x1387e0_67126880
+plot 636 taskArrived Task0x138a24
+plot 636 relteqEvent period "QM"
+plot 636 analysisLatencyStart
+plot 636 jobPreempted Job0x1387e0_67126880 -target Job0x138a24_0
+plot 636 jobResumed Job0x138a24_0
+plot 636 message {waiting for Decoder using component BufferDecoded}
+plot 636 jobPreempted Job0x138a24_0 -target Job0x1387e0_67126880
+plot 636 jobResumed Job0x1387e0_67126880
+plot 650 taskArrived Task0x1389b0
+plot 650 relteqEvent period "Network"
+plot 650 taskArrived Task0x13893c
+plot 650 relteqEvent period "Renderer"
+plot 650 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_13
+plot 650 jobResumed Job0x1389b0_13
+[Job Job0x1389b0_14] initWithTask Task0x1389b0 -name "Network 14"
+plot 650 jobResumed Job0x1389b0_14
+bufferplot 653 push Buffer0x36150 "13\nB"
+plot 653 jobPreempted Job0x1389b0_14 -target Job0x1388c8_13
+plot 653 jobResumed Job0x1388c8_13
+plot 653 message {executing for 24}
+bufferplot 677 push Buffer0x36190 "12\nI"
+bufferplot 677 push Buffer0x36190 "12\nI"
+bufferplot 677 pop Buffer0x36150
+plot 677 jobCompleted Job0x1388c8_13
+plot 677 jobPreempted Job0x1388c8_13 -target Job0x138a24_0
+plot 677 jobResumed Job0x138a24_0
+plot 677 message {waiting for Network using component Network}
+plot 677 jobPreempted Job0x138a24_0 -target Job0x1389b0_14
+plot 677 jobResumed Job0x1389b0_14
+plot 677 jobCompleted Job0x1389b0_14
+plot 677 jobPreempted Job0x1389b0_14 -target Job0x138a24_0
+plot 677 jobResumed Job0x138a24_0
+plot 677 message {start mode change} -color green
+plot 677 message {stop mode change} -color orange
+plot 677 analysisLatencyStop
+plot 677 jobPreempted Job0x138a24_0 -target Job0x1389b0_14
+plot 677 jobResumed Job0x1389b0_14
+plot 677 jobPreempted Job0x1389b0_14 -target Job0x13893c_12
+plot 677 jobResumed Job0x13893c_12
+[Job Job0x13893c_13] initWithTask Task0x13893c -name "Renderer 13"
+plot 677 jobResumed Job0x13893c_13
+bufferplot 681 pop Buffer0x36190
+plot 681 analysisRendered 11 B
+plot 681 jobCompleted Job0x13893c_13
+plot 681 jobPreempted Job0x13893c_13 -target Job0x1388c8_13
+plot 681 jobResumed Job0x1388c8_13
+plot 681 taskArrived Task0x1388c8
+[Job Job0x1388c8_14] initWithTask Task0x1388c8 -name "Decoder 14"
+plot 681 jobResumed Job0x1388c8_14
+plot 681 jobPreempted Job0x1388c8_14 -target Job0x1387e0_67126880
+plot 681 jobResumed Job0x1387e0_67126880
+plot 689 taskArrived Task0x138a24
+plot 689 relteqEvent period "QM"
+plot 689 analysisLatencyStart
+plot 689 jobPreempted Job0x1387e0_67126880 -target Job0x138a24_0
+plot 689 jobResumed Job0x138a24_0
+plot 689 message {waiting for Decoder using component BufferDecoded}
+plot 689 jobPreempted Job0x138a24_0 -target Job0x1387e0_67126880
+plot 689 jobResumed Job0x1387e0_67126880
+plot 700 taskArrived Task0x1389b0
+plot 700 relteqEvent period "Network"
+plot 700 taskArrived Task0x13893c
+plot 700 relteqEvent period "Renderer"
+plot 700 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_14
+plot 700 jobResumed Job0x1389b0_14
+[Job Job0x1389b0_15] initWithTask Task0x1389b0 -name "Network 15"
+plot 700 jobResumed Job0x1389b0_15
+bufferplot 703 push Buffer0x36150 "14\nB"
+plot 703 jobPreempted Job0x1389b0_15 -target Job0x1388c8_14
+plot 703 jobResumed Job0x1388c8_14
+plot 703 message {executing for 24}
+bufferplot 727 push Buffer0x36190 "13\nB"
+bufferplot 727 pop Buffer0x36150
+plot 727 jobCompleted Job0x1388c8_14
+plot 727 jobPreempted Job0x1388c8_14 -target Job0x138a24_0
+plot 727 jobResumed Job0x138a24_0
+plot 727 message {waiting for Network using component Network}
+plot 727 jobPreempted Job0x138a24_0 -target Job0x1389b0_15
+plot 727 jobResumed Job0x1389b0_15
+plot 727 jobCompleted Job0x1389b0_15
+plot 727 jobPreempted Job0x1389b0_15 -target Job0x138a24_0
+plot 727 jobResumed Job0x138a24_0
+plot 727 message {start mode change} -color green
+plot 727 message {stop mode change} -color orange
+plot 727 analysisLatencyStop
+plot 727 jobPreempted Job0x138a24_0 -target Job0x1389b0_15
+plot 727 jobResumed Job0x1389b0_15
+plot 727 jobPreempted Job0x1389b0_15 -target Job0x13893c_13
+plot 727 jobResumed Job0x13893c_13
+[Job Job0x13893c_14] initWithTask Task0x13893c -name "Renderer 14"
+plot 727 jobResumed Job0x13893c_14
+bufferplot 731 pop Buffer0x36190
+bufferplot 731 pop Buffer0x36190
+plot 731 analysisRendered 12 I
+plot 731 jobCompleted Job0x13893c_14
+plot 731 jobPreempted Job0x13893c_14 -target Job0x1388c8_14
+plot 731 jobResumed Job0x1388c8_14
+plot 731 taskArrived Task0x1388c8
+[Job Job0x1388c8_15] initWithTask Task0x1388c8 -name "Decoder 15"
+plot 731 jobResumed Job0x1388c8_15
+plot 731 jobPreempted Job0x1388c8_15 -target Job0x1387e0_67126880
+plot 731 jobResumed Job0x1387e0_67126880
+plot 742 taskArrived Task0x138a24
+plot 742 relteqEvent period "QM"
+plot 742 analysisLatencyStart
+plot 742 jobPreempted Job0x1387e0_67126880 -target Job0x138a24_0
+plot 742 jobResumed Job0x138a24_0
+plot 742 message {waiting for Decoder using component BufferDecoded}
+plot 742 jobPreempted Job0x138a24_0 -target Job0x1387e0_67126880
+plot 742 jobResumed Job0x1387e0_67126880
+plot 750 taskArrived Task0x1389b0
+plot 750 relteqEvent period "Network"
+plot 750 taskArrived Task0x13893c
+plot 750 relteqEvent period "Renderer"
+plot 750 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_15
+plot 750 jobResumed Job0x1389b0_15
+[Job Job0x1389b0_16] initWithTask Task0x1389b0 -name "Network 16"
+plot 750 jobResumed Job0x1389b0_16
+bufferplot 753 push Buffer0x36150 "15\nP"
+plot 753 jobPreempted Job0x1389b0_16 -target Job0x1388c8_15
+plot 753 jobResumed Job0x1388c8_15
+plot 753 message {executing for 24}
+bufferplot 777 push Buffer0x36190 "14\nB"
+bufferplot 777 push Buffer0x36190 "14\nB"
+bufferplot 777 pop Buffer0x36150
+plot 777 jobCompleted Job0x1388c8_15
+plot 777 jobPreempted Job0x1388c8_15 -target Job0x138a24_0
+plot 777 jobResumed Job0x138a24_0
+plot 777 message {waiting for Network using component Network}
+plot 777 jobPreempted Job0x138a24_0 -target Job0x1389b0_16
+plot 777 jobResumed Job0x1389b0_16
+plot 777 jobCompleted Job0x1389b0_16
+plot 777 jobPreempted Job0x1389b0_16 -target Job0x138a24_0
+plot 777 jobResumed Job0x138a24_0
+plot 777 message {start mode change} -color green
+plot 777 message {stop mode change} -color orange
+plot 777 analysisLatencyStop
+plot 777 jobPreempted Job0x138a24_0 -target Job0x1389b0_16
+plot 777 jobResumed Job0x1389b0_16
+plot 777 jobPreempted Job0x1389b0_16 -target Job0x13893c_14
+plot 777 jobResumed Job0x13893c_14
+[Job Job0x13893c_15] initWithTask Task0x13893c -name "Renderer 15"
+plot 777 jobResumed Job0x13893c_15
+bufferplot 781 pop Buffer0x36190
+plot 781 analysisRendered 13 B
+plot 781 jobCompleted Job0x13893c_15
+plot 781 jobPreempted Job0x13893c_15 -target Job0x1388c8_15
+plot 781 jobResumed Job0x1388c8_15
+plot 781 taskArrived Task0x1388c8
+[Job Job0x1388c8_16] initWithTask Task0x1388c8 -name "Decoder 16"
+plot 781 jobResumed Job0x1388c8_16
+plot 781 jobPreempted Job0x1388c8_16 -target Job0x1387e0_67126880
+plot 781 jobResumed Job0x1387e0_67126880
+plot 795 taskArrived Task0x138a24
+plot 795 relteqEvent period "QM"
+plot 795 analysisLatencyStart
+plot 795 jobPreempted Job0x1387e0_67126880 -target Job0x138a24_0
+plot 795 jobResumed Job0x138a24_0
+plot 795 message {waiting for Decoder using component BufferDecoded}
+plot 795 jobPreempted Job0x138a24_0 -target Job0x1387e0_67126880
+plot 795 jobResumed Job0x1387e0_67126880
+plot 800 taskArrived Task0x1389b0
+plot 800 relteqEvent period "Network"
+plot 800 taskArrived Task0x13893c
+plot 800 relteqEvent period "Renderer"
+plot 800 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_16
+plot 800 jobResumed Job0x1389b0_16
+[Job Job0x1389b0_17] initWithTask Task0x1389b0 -name "Network 17"
+plot 800 jobResumed Job0x1389b0_17
+bufferplot 803 push Buffer0x36150 "16\nB"
+plot 803 jobPreempted Job0x1389b0_17 -target Job0x1388c8_16
+plot 803 jobResumed Job0x1388c8_16
+plot 803 message {executing for 24}
+bufferplot 827 push Buffer0x36190 "15\nP"
+bufferplot 827 pop Buffer0x36150
+plot 827 jobCompleted Job0x1388c8_16
+plot 827 jobPreempted Job0x1388c8_16 -target Job0x138a24_0
+plot 827 jobResumed Job0x138a24_0
+plot 827 message {waiting for Network using component Network}
+plot 827 jobPreempted Job0x138a24_0 -target Job0x1389b0_17
+plot 827 jobResumed Job0x1389b0_17
+plot 827 jobCompleted Job0x1389b0_17
+plot 827 jobPreempted Job0x1389b0_17 -target Job0x138a24_0
+plot 827 jobResumed Job0x138a24_0
+plot 827 message {start mode change} -color green
+plot 827 message {stop mode change} -color orange
+plot 827 analysisLatencyStop
+plot 827 jobPreempted Job0x138a24_0 -target Job0x1389b0_17
+plot 827 jobResumed Job0x1389b0_17
+plot 827 jobPreempted Job0x1389b0_17 -target Job0x13893c_15
+plot 827 jobResumed Job0x13893c_15
+[Job Job0x13893c_16] initWithTask Task0x13893c -name "Renderer 16"
+plot 827 jobResumed Job0x13893c_16
+bufferplot 831 pop Buffer0x36190
+bufferplot 831 pop Buffer0x36190
+plot 831 analysisRendered 14 B
+plot 831 jobCompleted Job0x13893c_16
+plot 831 jobPreempted Job0x13893c_16 -target Job0x1388c8_16
+plot 831 jobResumed Job0x1388c8_16
+plot 831 taskArrived Task0x1388c8
+[Job Job0x1388c8_17] initWithTask Task0x1388c8 -name "Decoder 17"
+plot 831 jobResumed Job0x1388c8_17
+plot 831 jobPreempted Job0x1388c8_17 -target Job0x1387e0_67126880
+plot 831 jobResumed Job0x1387e0_67126880
+plot 848 taskArrived Task0x138a24
+plot 848 relteqEvent period "QM"
+plot 848 analysisLatencyStart
+plot 848 jobPreempted Job0x1387e0_67126880 -target Job0x138a24_0
+plot 848 jobResumed Job0x138a24_0
+plot 848 message {waiting for Decoder using component BufferDecoded}
+plot 848 jobPreempted Job0x138a24_0 -target Job0x1387e0_67126880
+plot 848 jobResumed Job0x1387e0_67126880
+plot 850 taskArrived Task0x1389b0
+plot 850 relteqEvent period "Network"
+plot 850 taskArrived Task0x13893c
+plot 850 relteqEvent period "Renderer"
+plot 850 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_17
+plot 850 jobResumed Job0x1389b0_17
+[Job Job0x1389b0_18] initWithTask Task0x1389b0 -name "Network 18"
+plot 850 jobResumed Job0x1389b0_18
+bufferplot 853 push Buffer0x36150 "17\nB"
+plot 853 jobPreempted Job0x1389b0_18 -target Job0x1388c8_17
+plot 853 jobResumed Job0x1388c8_17
+plot 853 message {executing for 24}
+bufferplot 877 push Buffer0x36190 "16\nB"
+bufferplot 877 push Buffer0x36190 "16\nB"
+bufferplot 877 pop Buffer0x36150
+plot 877 jobCompleted Job0x1388c8_17
+plot 877 jobPreempted Job0x1388c8_17 -target Job0x138a24_0
+plot 877 jobResumed Job0x138a24_0
+plot 877 message {waiting for Network using component Network}
+plot 877 jobPreempted Job0x138a24_0 -target Job0x1389b0_18
+plot 877 jobResumed Job0x1389b0_18
+plot 877 jobCompleted Job0x1389b0_18
+plot 877 jobPreempted Job0x1389b0_18 -target Job0x138a24_0
+plot 877 jobResumed Job0x138a24_0
+plot 877 message {start mode change} -color green
+plot 877 message {stop mode change} -color orange
+plot 877 analysisLatencyStop
+plot 877 jobPreempted Job0x138a24_0 -target Job0x1389b0_18
+plot 877 jobResumed Job0x1389b0_18
+plot 877 jobPreempted Job0x1389b0_18 -target Job0x13893c_16
+plot 877 jobResumed Job0x13893c_16
+[Job Job0x13893c_17] initWithTask Task0x13893c -name "Renderer 17"
+plot 877 jobResumed Job0x13893c_17
+bufferplot 881 pop Buffer0x36190
+plot 881 analysisRendered 15 P
+plot 881 jobCompleted Job0x13893c_17
+plot 881 jobPreempted Job0x13893c_17 -target Job0x1388c8_17
+plot 881 jobResumed Job0x1388c8_17
+plot 881 taskArrived Task0x1388c8
+[Job Job0x1388c8_18] initWithTask Task0x1388c8 -name "Decoder 18"
+plot 881 jobResumed Job0x1388c8_18
+plot 881 jobPreempted Job0x1388c8_18 -target Job0x1387e0_67126880
+plot 881 jobResumed Job0x1387e0_67126880
+plot 900 taskArrived Task0x1389b0
+plot 900 relteqEvent period "Network"
+plot 900 taskArrived Task0x13893c
+plot 900 relteqEvent period "Renderer"
+plot 900 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_18
+plot 900 jobResumed Job0x1389b0_18
+[Job Job0x1389b0_19] initWithTask Task0x1389b0 -name "Network 19"
+plot 900 jobResumed Job0x1389b0_19
+plot 901 taskArrived Task0x138a24
+plot 901 relteqEvent period "QM"
+plot 901 analysisLatencyStart
+plot 901 jobPreempted Job0x1389b0_19 -target Job0x138a24_0
+plot 901 jobResumed Job0x138a24_0
+plot 901 message {waiting for Decoder using component BufferDecoded}
+plot 901 jobPreempted Job0x138a24_0 -target Job0x1389b0_19
+plot 901 jobResumed Job0x1389b0_19
+bufferplot 903 push Buffer0x36150 "18\nI"
+plot 903 jobPreempted Job0x1389b0_19 -target Job0x1388c8_18
+plot 903 jobResumed Job0x1388c8_18
+plot 903 message {executing for 24}
+bufferplot 927 push Buffer0x36190 "17\nB"
+bufferplot 927 pop Buffer0x36150
+plot 927 jobCompleted Job0x1388c8_18
+plot 927 jobPreempted Job0x1388c8_18 -target Job0x138a24_0
+plot 927 jobResumed Job0x138a24_0
+plot 927 message {waiting for Network using component Network}
+plot 927 jobPreempted Job0x138a24_0 -target Job0x1389b0_19
+plot 927 jobResumed Job0x1389b0_19
+plot 927 jobCompleted Job0x1389b0_19
+plot 927 jobPreempted Job0x1389b0_19 -target Job0x138a24_0
+plot 927 jobResumed Job0x138a24_0
+plot 927 message {start mode change} -color green
+plot 927 message {stop mode change} -color orange
+plot 927 analysisLatencyStop
+plot 927 jobPreempted Job0x138a24_0 -target Job0x1389b0_19
+plot 927 jobResumed Job0x1389b0_19
+plot 927 jobPreempted Job0x1389b0_19 -target Job0x13893c_17
+plot 927 jobResumed Job0x13893c_17
+[Job Job0x13893c_18] initWithTask Task0x13893c -name "Renderer 18"
+plot 927 jobResumed Job0x13893c_18
+bufferplot 931 pop Buffer0x36190
+bufferplot 931 pop Buffer0x36190
+plot 931 analysisRendered 16 B
+plot 931 jobCompleted Job0x13893c_18
+plot 931 jobPreempted Job0x13893c_18 -target Job0x1388c8_18
+plot 931 jobResumed Job0x1388c8_18
+plot 931 taskArrived Task0x1388c8
+[Job Job0x1388c8_19] initWithTask Task0x1388c8 -name "Decoder 19"
+plot 931 jobResumed Job0x1388c8_19
+plot 931 jobPreempted Job0x1388c8_19 -target Job0x1387e0_67126880
+plot 931 jobResumed Job0x1387e0_67126880
+plot 950 taskArrived Task0x1389b0
+plot 950 relteqEvent period "Network"
+plot 950 taskArrived Task0x13893c
+plot 950 relteqEvent period "Renderer"
+plot 950 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_19
+plot 950 jobResumed Job0x1389b0_19
+[Job Job0x1389b0_20] initWithTask Task0x1389b0 -name "Network 20"
+plot 950 jobResumed Job0x1389b0_20
+bufferplot 953 push Buffer0x36150 "19\nB"
+plot 953 jobCompleted Job0x1389b0_20
+plot 953 jobPreempted Job0x1389b0_20 -target Job0x13893c_18
+plot 953 jobResumed Job0x13893c_18
+[Job Job0x13893c_19] initWithTask Task0x13893c -name "Renderer 19"
+plot 953 jobResumed Job0x13893c_19
+plot 954 taskArrived Task0x138a24
+plot 954 relteqEvent period "QM"
+plot 954 analysisLatencyStart
+plot 954 jobPreempted Job0x13893c_19 -target Job0x138a24_0
+plot 954 jobResumed Job0x138a24_0
+plot 954 message {waiting for Renderer using component BufferDecoded}
+plot 954 jobPreempted Job0x138a24_0 -target Job0x13893c_19
+plot 954 jobResumed Job0x13893c_19
+bufferplot 956 pop Buffer0x36190
+plot 956 analysisRendered 17 B
+plot 956 jobCompleted Job0x13893c_19
+plot 956 jobPreempted Job0x13893c_19 -target Job0x138a24_0
+plot 956 jobResumed Job0x138a24_0
+plot 956 message {waiting for Decoder using component BufferDecoded}
+plot 956 jobPreempted Job0x138a24_0 -target Job0x1388c8_19
+plot 956 jobResumed Job0x1388c8_19
+plot 956 message {executing for 24}
+bufferplot 981 push Buffer0x36190 "18\nI"
+bufferplot 981 push Buffer0x36190 "18\nI"
+bufferplot 981 pop Buffer0x36150
+plot 981 jobPreempted Job0x1388c8_19 -target Job0x13893c_19
+plot 981 jobResumed Job0x13893c_19
+plot 981 jobPreempted Job0x13893c_19 -target Job0x1387e0_67126880
+plot 981 jobResumed Job0x1387e0_67126880
+plot 1000 taskArrived Task0x1389b0
+plot 1000 relteqEvent period "Network"
+plot 1000 taskArrived Task0x13893c
+plot 1000 relteqEvent period "Renderer"
+plot 1000 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_20
+plot 1000 jobResumed Job0x1389b0_20
+[Job Job0x1389b0_21] initWithTask Task0x1389b0 -name "Network 21"
+plot 1000 jobResumed Job0x1389b0_21
+bufferplot 1003 push Buffer0x36150 "20\nB"
+plot 1003 jobPreempted Job0x1389b0_21 -target Job0x1388c8_19
+plot 1003 jobResumed Job0x1388c8_19
+plot 1003 jobCompleted Job0x1388c8_19
+plot 1003 jobPreempted Job0x1388c8_19 -target Job0x138a24_0
+plot 1003 jobResumed Job0x138a24_0
+plot 1003 message {waiting for Network using component Network}
+plot 1003 jobPreempted Job0x138a24_0 -target Job0x1389b0_21
+plot 1003 jobResumed Job0x1389b0_21
+plot 1003 jobCompleted Job0x1389b0_21
+plot 1003 jobPreempted Job0x1389b0_21 -target Job0x138a24_0
+plot 1003 jobResumed Job0x138a24_0
+plot 1003 message {start mode change} -color green
+plot 1003 message {stop mode change} -color orange
+plot 1003 analysisLatencyStop
+plot 1003 jobPreempted Job0x138a24_0 -target Job0x1389b0_21
+plot 1003 jobResumed Job0x1389b0_21
+plot 1003 jobPreempted Job0x1389b0_21 -target Job0x13893c_19
+plot 1003 jobResumed Job0x13893c_19
+[Job Job0x13893c_20] initWithTask Task0x13893c -name "Renderer 20"
+plot 1003 jobResumed Job0x13893c_20
+bufferplot 1006 pop Buffer0x36190
+bufferplot 1006 pop Buffer0x36190
+plot 1006 analysisRendered 18 I
+plot 1006 jobCompleted Job0x13893c_20
+plot 1006 jobPreempted Job0x13893c_20 -target Job0x1388c8_19
+plot 1006 jobResumed Job0x1388c8_19
+plot 1006 taskArrived Task0x1388c8
+[Job Job0x1388c8_20] initWithTask Task0x1388c8 -name "Decoder 20"
+plot 1006 jobResumed Job0x1388c8_20
+plot 1006 jobPreempted Job0x1388c8_20 -target Job0x1387e0_67126880
+plot 1006 jobResumed Job0x1387e0_67126880
+plot 1007 taskArrived Task0x138a24
+plot 1007 relteqEvent period "QM"
+plot 1007 analysisLatencyStart
+plot 1007 jobPreempted Job0x1387e0_67126880 -target Job0x138a24_0
+plot 1007 jobResumed Job0x138a24_0
+plot 1007 message {waiting for Decoder using component BufferDecoded}
+plot 1007 jobPreempted Job0x138a24_0 -target Job0x1387e0_67126880
+plot 1007 jobResumed Job0x1387e0_67126880
+plot 1050 taskArrived Task0x1389b0
+plot 1050 relteqEvent period "Network"
+plot 1050 taskArrived Task0x13893c
+plot 1050 relteqEvent period "Renderer"
+plot 1050 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_21
+plot 1050 jobResumed Job0x1389b0_21
+[Job Job0x1389b0_22] initWithTask Task0x1389b0 -name "Network 22"
+plot 1050 jobResumed Job0x1389b0_22
+bufferplot 1053 push Buffer0x36150 "21\nP"
+plot 1053 jobPreempted Job0x1389b0_22 -target Job0x1388c8_20
+plot 1053 jobResumed Job0x1388c8_20
+plot 1053 message {executing for 24}
+plot 1060 taskArrived Task0x138a24
+plot 1060 relteqEvent period "QM"
+plot 1060 analysisLatencyStart
+bufferplot 1077 push Buffer0x36190 "19\nB"
+bufferplot 1077 pop Buffer0x36150
+plot 1077 jobCompleted Job0x1388c8_20
+plot 1077 jobPreempted Job0x1388c8_20 -target Job0x138a24_0
+plot 1077 jobResumed Job0x138a24_0
+plot 1077 message {waiting for Network using component Network}
+plot 1077 jobPreempted Job0x138a24_0 -target Job0x1389b0_22
+plot 1077 jobResumed Job0x1389b0_22
+plot 1077 jobCompleted Job0x1389b0_22
+plot 1077 jobPreempted Job0x1389b0_22 -target Job0x138a24_0
+plot 1077 jobResumed Job0x138a24_0
+plot 1077 message {start mode change} -color green
+plot 1077 message {stop mode change} -color orange
+plot 1077 analysisLatencyStop
+plot 1077 message {Task 'QM' missed its deadline}
+plot 1077 message {start mode change} -color green
+plot 1077 message {stop mode change} -color orange
+plot 1077 analysisLatencyStop
+plot 1077 jobPreempted Job0x138a24_0 -target Job0x1389b0_22
+plot 1077 jobResumed Job0x1389b0_22
+plot 1077 jobPreempted Job0x1389b0_22 -target Job0x13893c_20
+plot 1077 jobResumed Job0x13893c_20
+[Job Job0x13893c_21] initWithTask Task0x13893c -name "Renderer 21"
+plot 1077 jobResumed Job0x13893c_21
+bufferplot 1081 pop Buffer0x36190
+plot 1081 analysisRendered 19 B
+plot 1081 jobCompleted Job0x13893c_21
+plot 1081 jobPreempted Job0x13893c_21 -target Job0x1388c8_20
+plot 1081 jobResumed Job0x1388c8_20
+plot 1081 taskArrived Task0x1388c8
+[Job Job0x1388c8_21] initWithTask Task0x1388c8 -name "Decoder 21"
+plot 1081 jobResumed Job0x1388c8_21
+plot 1081 jobPreempted Job0x1388c8_21 -target Job0x1387e0_67126880
+plot 1081 jobResumed Job0x1387e0_67126880
+plot 1100 taskArrived Task0x1389b0
+plot 1100 relteqEvent period "Network"
+plot 1100 taskArrived Task0x13893c
+plot 1100 relteqEvent period "Renderer"
+plot 1100 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_22
+plot 1100 jobResumed Job0x1389b0_22
+[Job Job0x1389b0_23] initWithTask Task0x1389b0 -name "Network 23"
+plot 1100 jobResumed Job0x1389b0_23
+bufferplot 1103 push Buffer0x36150 "22\nB"
+plot 1103 jobCompleted Job0x1389b0_23
+plot 1103 jobPreempted Job0x1389b0_23 -target Job0x13893c_21
+plot 1103 jobResumed Job0x13893c_21
+[Job Job0x13893c_22] initWithTask Task0x13893c -name "Renderer 22"
+plot 1103 jobResumed Job0x13893c_22
+plot 1106 message {Renderer received NULL packet, rendering last frame}
+plot 1106 analysisRendered 19 B
+plot 1106 jobCompleted Job0x13893c_22
+plot 1106 jobPreempted Job0x13893c_22 -target Job0x1388c8_21
+plot 1106 jobResumed Job0x1388c8_21
+plot 1106 message {executing for 24}
+plot 1113 taskArrived Task0x138a24
+plot 1113 relteqEvent period "QM"
+plot 1113 analysisLatencyStart
+plot 1113 jobPreempted Job0x1388c8_21 -target Job0x138a24_0
+plot 1113 jobResumed Job0x138a24_0
+plot 1113 message {waiting for Decoder using component BufferDecoded}
+plot 1113 jobPreempted Job0x138a24_0 -target Job0x1388c8_21
+plot 1113 jobResumed Job0x1388c8_21
+bufferplot 1130 push Buffer0x36190 "20\nB"
+bufferplot 1130 pop Buffer0x36150
+plot 1130 jobCompleted Job0x1388c8_21
+plot 1130 jobPreempted Job0x1388c8_21 -target Job0x138a24_0
+plot 1130 jobResumed Job0x138a24_0
+plot 1130 message {start mode change} -color green
+plot 1130 message {stop mode change} -color orange
+plot 1130 analysisLatencyStop
+plot 1130 jobPreempted Job0x138a24_0 -target Job0x1388c8_21
+plot 1130 jobResumed Job0x1388c8_21
+plot 1130 taskArrived Task0x1388c8
+[Job Job0x1388c8_22] initWithTask Task0x1388c8 -name "Decoder 22"
+plot 1130 jobResumed Job0x1388c8_22
+plot 1130 jobPreempted Job0x1388c8_22 -target Job0x1387e0_67126880
+plot 1130 jobResumed Job0x1387e0_67126880
+plot 1150 taskArrived Task0x1389b0
+plot 1150 relteqEvent period "Network"
+plot 1150 taskArrived Task0x13893c
+plot 1150 relteqEvent period "Renderer"
+plot 1150 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_23
+plot 1150 jobResumed Job0x1389b0_23
+[Job Job0x1389b0_24] initWithTask Task0x1389b0 -name "Network 24"
+plot 1150 jobResumed Job0x1389b0_24
+bufferplot 1153 push Buffer0x36150 "23\nB"
+plot 1153 jobCompleted Job0x1389b0_24
+plot 1153 jobPreempted Job0x1389b0_24 -target Job0x13893c_22
+plot 1153 jobResumed Job0x13893c_22
+[Job Job0x13893c_23] initWithTask Task0x13893c -name "Renderer 23"
+plot 1153 jobResumed Job0x13893c_23
+bufferplot 1156 pop Buffer0x36190
+plot 1156 analysisRendered 20 B
+plot 1156 jobCompleted Job0x13893c_23
+plot 1156 jobPreempted Job0x13893c_23 -target Job0x1388c8_22
+plot 1156 jobResumed Job0x1388c8_22
+plot 1156 message {executing for 24}
+plot 1166 taskArrived Task0x138a24
+plot 1166 relteqEvent period "QM"
+plot 1166 analysisLatencyStart
+plot 1166 jobPreempted Job0x1388c8_22 -target Job0x138a24_0
+plot 1166 jobResumed Job0x138a24_0
+plot 1166 message {waiting for Decoder using component BufferDecoded}
+plot 1166 jobPreempted Job0x138a24_0 -target Job0x1388c8_22
+plot 1166 jobResumed Job0x1388c8_22
+bufferplot 1181 push Buffer0x36190 "21\nP"
+bufferplot 1181 push Buffer0x36190 "21\nP"
+bufferplot 1181 pop Buffer0x36150
+plot 1181 jobCompleted Job0x1388c8_22
+plot 1181 jobPreempted Job0x1388c8_22 -target Job0x138a24_0
+plot 1181 jobResumed Job0x138a24_0
+plot 1181 message {start mode change} -color green
+plot 1181 message {stop mode change} -color orange
+plot 1181 analysisLatencyStop
+plot 1181 jobPreempted Job0x138a24_0 -target Job0x1388c8_22
+plot 1181 jobResumed Job0x1388c8_22
+plot 1181 taskArrived Task0x1388c8
+[Job Job0x1388c8_23] initWithTask Task0x1388c8 -name "Decoder 23"
+plot 1181 jobResumed Job0x1388c8_23
+plot 1181 jobPreempted Job0x1388c8_23 -target Job0x1387e0_67126880
+plot 1181 jobResumed Job0x1387e0_67126880
+plot 1200 taskArrived Task0x1389b0
+plot 1200 relteqEvent period "Network"
+plot 1200 taskArrived Task0x13893c
+plot 1200 relteqEvent period "Renderer"
+plot 1200 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_24
+plot 1200 jobResumed Job0x1389b0_24
+[Job Job0x1389b0_25] initWithTask Task0x1389b0 -name "Network 25"
+plot 1200 jobResumed Job0x1389b0_25
+bufferplot 1203 push Buffer0x36150 "24\nI"
+plot 1203 jobCompleted Job0x1389b0_25
+plot 1203 jobPreempted Job0x1389b0_25 -target Job0x13893c_23
+plot 1203 jobResumed Job0x13893c_23
+[Job Job0x13893c_24] initWithTask Task0x13893c -name "Renderer 24"
+plot 1203 jobResumed Job0x13893c_24
+bufferplot 1206 pop Buffer0x36190
+bufferplot 1206 pop Buffer0x36190
+plot 1206 analysisRendered 21 P
+plot 1206 jobCompleted Job0x13893c_24
+plot 1206 jobPreempted Job0x13893c_24 -target Job0x1388c8_23
+plot 1206 jobResumed Job0x1388c8_23
+plot 1206 message {executing for 24}
+plot 1219 taskArrived Task0x138a24
+plot 1219 relteqEvent period "QM"
+plot 1219 analysisLatencyStart
+plot 1219 jobPreempted Job0x1388c8_23 -target Job0x138a24_0
+plot 1219 jobResumed Job0x138a24_0
+plot 1219 message {waiting for Decoder using component BufferDecoded}
+plot 1219 jobPreempted Job0x138a24_0 -target Job0x1388c8_23
+plot 1219 jobResumed Job0x1388c8_23
+bufferplot 1231 push Buffer0x36190 "22\nB"
+bufferplot 1231 pop Buffer0x36150
+plot 1231 jobCompleted Job0x1388c8_23
+plot 1231 jobPreempted Job0x1388c8_23 -target Job0x138a24_0
+plot 1231 jobResumed Job0x138a24_0
+plot 1231 message {start mode change} -color green
+plot 1231 message {stop mode change} -color orange
+plot 1231 analysisLatencyStop
+plot 1231 jobPreempted Job0x138a24_0 -target Job0x1388c8_23
+plot 1231 jobResumed Job0x1388c8_23
+plot 1231 taskArrived Task0x1388c8
+[Job Job0x1388c8_24] initWithTask Task0x1388c8 -name "Decoder 24"
+plot 1231 jobResumed Job0x1388c8_24
+plot 1231 jobPreempted Job0x1388c8_24 -target Job0x1387e0_67126880
+plot 1231 jobResumed Job0x1387e0_67126880
+plot 1250 taskArrived Task0x1389b0
+plot 1250 relteqEvent period "Network"
+plot 1250 taskArrived Task0x13893c
+plot 1250 relteqEvent period "Renderer"
+plot 1250 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_25
+plot 1250 jobResumed Job0x1389b0_25
+[Job Job0x1389b0_26] initWithTask Task0x1389b0 -name "Network 26"
+plot 1250 jobResumed Job0x1389b0_26
+bufferplot 1253 push Buffer0x36150 "25\nB"
+plot 1253 jobCompleted Job0x1389b0_26
+plot 1253 jobPreempted Job0x1389b0_26 -target Job0x13893c_24
+plot 1253 jobResumed Job0x13893c_24
+[Job Job0x13893c_25] initWithTask Task0x13893c -name "Renderer 25"
+plot 1253 jobResumed Job0x13893c_25
+bufferplot 1256 pop Buffer0x36190
+plot 1256 analysisRendered 22 B
+plot 1256 jobCompleted Job0x13893c_25
+plot 1256 jobPreempted Job0x13893c_25 -target Job0x1388c8_24
+plot 1256 jobResumed Job0x1388c8_24
+plot 1256 message {executing for 24}
+plot 1272 taskArrived Task0x138a24
+plot 1272 relteqEvent period "QM"
+plot 1272 analysisLatencyStart
+plot 1272 jobPreempted Job0x1388c8_24 -target Job0x138a24_0
+plot 1272 jobResumed Job0x138a24_0
+plot 1272 message {waiting for Decoder using component BufferDecoded}
+plot 1272 jobPreempted Job0x138a24_0 -target Job0x1388c8_24
+plot 1272 jobResumed Job0x1388c8_24
+bufferplot 1281 push Buffer0x36190 "23\nB"
+bufferplot 1281 push Buffer0x36190 "23\nB"
+bufferplot 1281 pop Buffer0x36150
+plot 1281 jobCompleted Job0x1388c8_24
+plot 1281 jobPreempted Job0x1388c8_24 -target Job0x138a24_0
+plot 1281 jobResumed Job0x138a24_0
+plot 1281 message {start mode change} -color green
+plot 1281 message {stop mode change} -color orange
+plot 1281 analysisLatencyStop
+plot 1281 jobPreempted Job0x138a24_0 -target Job0x1388c8_24
+plot 1281 jobResumed Job0x1388c8_24
+plot 1281 taskArrived Task0x1388c8
+[Job Job0x1388c8_25] initWithTask Task0x1388c8 -name "Decoder 25"
+plot 1281 jobResumed Job0x1388c8_25
+plot 1281 jobPreempted Job0x1388c8_25 -target Job0x1387e0_67126880
+plot 1281 jobResumed Job0x1387e0_67126880
+plot 1300 taskArrived Task0x1389b0
+plot 1300 relteqEvent period "Network"
+plot 1300 taskArrived Task0x13893c
+plot 1300 relteqEvent period "Renderer"
+plot 1300 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_26
+plot 1300 jobResumed Job0x1389b0_26
+[Job Job0x1389b0_27] initWithTask Task0x1389b0 -name "Network 27"
+plot 1300 jobResumed Job0x1389b0_27
+bufferplot 1303 push Buffer0x36150 "26\nB"
+plot 1303 jobCompleted Job0x1389b0_27
+plot 1303 jobPreempted Job0x1389b0_27 -target Job0x13893c_25
+plot 1303 jobResumed Job0x13893c_25
+[Job Job0x13893c_26] initWithTask Task0x13893c -name "Renderer 26"
+plot 1303 jobResumed Job0x13893c_26
+bufferplot 1306 pop Buffer0x36190
+bufferplot 1306 pop Buffer0x36190
+plot 1306 analysisRendered 23 B
+plot 1306 jobCompleted Job0x13893c_26
+plot 1306 jobPreempted Job0x13893c_26 -target Job0x1388c8_25
+plot 1306 jobResumed Job0x1388c8_25
+plot 1306 message {executing for 24}
+plot 1325 taskArrived Task0x138a24
+plot 1325 relteqEvent period "QM"
+plot 1325 analysisLatencyStart
+plot 1325 jobPreempted Job0x1388c8_25 -target Job0x138a24_0
+plot 1325 jobResumed Job0x138a24_0
+plot 1325 message {waiting for Decoder using component BufferDecoded}
+plot 1325 jobPreempted Job0x138a24_0 -target Job0x1388c8_25
+plot 1325 jobResumed Job0x1388c8_25
+bufferplot 1331 push Buffer0x36190 "24\nI"
+bufferplot 1331 pop Buffer0x36150
+plot 1331 jobCompleted Job0x1388c8_25
+plot 1331 jobPreempted Job0x1388c8_25 -target Job0x138a24_0
+plot 1331 jobResumed Job0x138a24_0
+plot 1331 message {start mode change} -color green
+plot 1331 message {stop mode change} -color orange
+plot 1331 analysisLatencyStop
+plot 1331 jobPreempted Job0x138a24_0 -target Job0x1388c8_25
+plot 1331 jobResumed Job0x1388c8_25
+plot 1331 taskArrived Task0x1388c8
+[Job Job0x1388c8_26] initWithTask Task0x1388c8 -name "Decoder 26"
+plot 1331 jobResumed Job0x1388c8_26
+plot 1331 jobPreempted Job0x1388c8_26 -target Job0x1387e0_67126880
+plot 1331 jobResumed Job0x1387e0_67126880
+plot 1350 taskArrived Task0x1389b0
+plot 1350 relteqEvent period "Network"
+plot 1350 taskArrived Task0x13893c
+plot 1350 relteqEvent period "Renderer"
+plot 1350 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_27
+plot 1350 jobResumed Job0x1389b0_27
+[Job Job0x1389b0_28] initWithTask Task0x1389b0 -name "Network 28"
+plot 1350 jobResumed Job0x1389b0_28
+bufferplot 1353 push Buffer0x36150 "27\nP"
+plot 1353 jobCompleted Job0x1389b0_28
+plot 1353 jobPreempted Job0x1389b0_28 -target Job0x13893c_26
+plot 1353 jobResumed Job0x13893c_26
+[Job Job0x13893c_27] initWithTask Task0x13893c -name "Renderer 27"
+plot 1353 jobResumed Job0x13893c_27
+bufferplot 1356 pop Buffer0x36190
+plot 1356 analysisRendered 24 I
+plot 1356 jobCompleted Job0x13893c_27
+plot 1356 jobPreempted Job0x13893c_27 -target Job0x1388c8_26
+plot 1356 jobResumed Job0x1388c8_26
+plot 1356 message {executing for 24}
+plot 1378 taskArrived Task0x138a24
+plot 1378 relteqEvent period "QM"
+plot 1378 analysisLatencyStart
+plot 1378 jobPreempted Job0x1388c8_26 -target Job0x138a24_0
+plot 1378 jobResumed Job0x138a24_0
+plot 1378 message {waiting for Decoder using component BufferDecoded}
+plot 1378 jobPreempted Job0x138a24_0 -target Job0x1388c8_26
+plot 1378 jobResumed Job0x1388c8_26
+bufferplot 1381 push Buffer0x36190 "25\nB"
+bufferplot 1381 push Buffer0x36190 "25\nB"
+bufferplot 1381 pop Buffer0x36150
+plot 1381 jobCompleted Job0x1388c8_26
+plot 1381 jobPreempted Job0x1388c8_26 -target Job0x138a24_0
+plot 1381 jobResumed Job0x138a24_0
+plot 1381 message {start mode change} -color green
+plot 1381 message {stop mode change} -color orange
+plot 1381 analysisLatencyStop
+plot 1381 jobPreempted Job0x138a24_0 -target Job0x1388c8_26
+plot 1381 jobResumed Job0x1388c8_26
+plot 1381 taskArrived Task0x1388c8
+[Job Job0x1388c8_27] initWithTask Task0x1388c8 -name "Decoder 27"
+plot 1381 jobResumed Job0x1388c8_27
+plot 1381 jobPreempted Job0x1388c8_27 -target Job0x1387e0_67126880
+plot 1381 jobResumed Job0x1387e0_67126880
+plot 1400 taskArrived Task0x1389b0
+plot 1400 relteqEvent period "Network"
+plot 1400 taskArrived Task0x13893c
+plot 1400 relteqEvent period "Renderer"
+plot 1400 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_28
+plot 1400 jobResumed Job0x1389b0_28
+[Job Job0x1389b0_29] initWithTask Task0x1389b0 -name "Network 29"
+plot 1400 jobResumed Job0x1389b0_29
+bufferplot 1403 push Buffer0x36150 "28\nB"
+plot 1403 jobCompleted Job0x1389b0_29
+plot 1403 jobPreempted Job0x1389b0_29 -target Job0x13893c_27
+plot 1403 jobResumed Job0x13893c_27
+[Job Job0x13893c_28] initWithTask Task0x13893c -name "Renderer 28"
+plot 1403 jobResumed Job0x13893c_28
+bufferplot 1406 pop Buffer0x36190
+bufferplot 1406 pop Buffer0x36190
+plot 1406 analysisRendered 25 B
+plot 1406 jobCompleted Job0x13893c_28
+plot 1406 jobPreempted Job0x13893c_28 -target Job0x1388c8_27
+plot 1406 jobResumed Job0x1388c8_27
+plot 1406 message {executing for 24}
+plot 1431 taskArrived Task0x138a24
+plot 1431 relteqEvent period "QM"
+plot 1431 analysisLatencyStart
+plot 1431 jobPreempted Job0x1388c8_27 -target Job0x138a24_0
+plot 1431 jobResumed Job0x138a24_0
+plot 1431 message {waiting for Decoder using component BufferDecoded}
+plot 1431 jobPreempted Job0x138a24_0 -target Job0x1388c8_27
+plot 1431 jobResumed Job0x1388c8_27
+bufferplot 1431 push Buffer0x36190 "26\nB"
+bufferplot 1431 pop Buffer0x36150
+plot 1431 jobCompleted Job0x1388c8_27
+plot 1431 jobPreempted Job0x1388c8_27 -target Job0x138a24_0
+plot 1431 jobResumed Job0x138a24_0
+plot 1431 message {start mode change} -color green
+plot 1431 message {stop mode change} -color orange
+plot 1431 analysisLatencyStop
+plot 1431 jobPreempted Job0x138a24_0 -target Job0x1388c8_27
+plot 1431 jobResumed Job0x1388c8_27
+plot 1431 taskArrived Task0x1388c8
+[Job Job0x1388c8_28] initWithTask Task0x1388c8 -name "Decoder 28"
+plot 1431 jobResumed Job0x1388c8_28
+plot 1431 jobPreempted Job0x1388c8_28 -target Job0x1387e0_67126880
+plot 1431 jobResumed Job0x1387e0_67126880
+plot 1450 taskArrived Task0x1389b0
+plot 1450 relteqEvent period "Network"
+plot 1450 taskArrived Task0x13893c
+plot 1450 relteqEvent period "Renderer"
+plot 1450 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_29
+plot 1450 jobResumed Job0x1389b0_29
+[Job Job0x1389b0_30] initWithTask Task0x1389b0 -name "Network 30"
+plot 1450 jobResumed Job0x1389b0_30
+bufferplot 1453 push Buffer0x36150 "29\nB"
+plot 1453 jobCompleted Job0x1389b0_30
+plot 1453 jobPreempted Job0x1389b0_30 -target Job0x13893c_28
+plot 1453 jobResumed Job0x13893c_28
+[Job Job0x13893c_29] initWithTask Task0x13893c -name "Renderer 29"
+plot 1453 jobResumed Job0x13893c_29
+bufferplot 1456 pop Buffer0x36190
+plot 1456 analysisRendered 26 B
+plot 1456 jobCompleted Job0x13893c_29
+plot 1456 jobPreempted Job0x13893c_29 -target Job0x1388c8_28
+plot 1456 jobResumed Job0x1388c8_28
+plot 1456 message {executing for 24}
+bufferplot 1481 push Buffer0x36190 "27\nP"
+bufferplot 1481 push Buffer0x36190 "27\nP"
+bufferplot 1481 pop Buffer0x36150
+plot 1481 jobCompleted Job0x1388c8_28
+plot 1481 taskArrived Task0x1388c8
+[Job Job0x1388c8_29] initWithTask Task0x1388c8 -name "Decoder 29"
+plot 1481 jobResumed Job0x1388c8_29
+plot 1481 jobPreempted Job0x1388c8_29 -target Job0x1387e0_67126880
+plot 1481 jobResumed Job0x1387e0_67126880
+plot 1484 taskArrived Task0x138a24
+plot 1484 relteqEvent period "QM"
+plot 1484 analysisLatencyStart
+plot 1484 jobPreempted Job0x1387e0_67126880 -target Job0x138a24_0
+plot 1484 jobResumed Job0x138a24_0
+plot 1484 message {waiting for Decoder using component BufferDecoded}
+plot 1484 jobPreempted Job0x138a24_0 -target Job0x1387e0_67126880
+plot 1484 jobResumed Job0x1387e0_67126880
+plot 1500 taskArrived Task0x1389b0
+plot 1500 relteqEvent period "Network"
+plot 1500 taskArrived Task0x13893c
+plot 1500 relteqEvent period "Renderer"
+plot 1500 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_30
+plot 1500 jobResumed Job0x1389b0_30
+[Job Job0x1389b0_31] initWithTask Task0x1389b0 -name "Network 31"
+plot 1500 jobResumed Job0x1389b0_31
+bufferplot 1503 push Buffer0x36150 "30\nI"
+plot 1503 jobPreempted Job0x1389b0_31 -target Job0x1388c8_29
+plot 1503 jobResumed Job0x1388c8_29
+plot 1503 message {executing for 24}
+bufferplot 1527 push Buffer0x36190 "28\nB"
+bufferplot 1527 push Buffer0x36190 "28\nB"
+bufferplot 1527 pop Buffer0x36150
+plot 1527 jobCompleted Job0x1388c8_29
+plot 1527 jobPreempted Job0x1388c8_29 -target Job0x138a24_0
+plot 1527 jobResumed Job0x138a24_0
+plot 1527 message {waiting for Network using component Network}
+plot 1527 jobPreempted Job0x138a24_0 -target Job0x1389b0_31
+plot 1527 jobResumed Job0x1389b0_31
+plot 1528 jobCompleted Job0x1389b0_31
+plot 1528 jobPreempted Job0x1389b0_31 -target Job0x138a24_0
+plot 1528 jobResumed Job0x138a24_0
+plot 1528 message {start mode change} -color green
+plot 1528 message {stop mode change} -color orange
+plot 1528 analysisLatencyStop
+plot 1528 jobPreempted Job0x138a24_0 -target Job0x1389b0_31
+plot 1528 jobResumed Job0x1389b0_31
+plot 1528 jobPreempted Job0x1389b0_31 -target Job0x13893c_29
+plot 1528 jobResumed Job0x13893c_29
+[Job Job0x13893c_30] initWithTask Task0x13893c -name "Renderer 30"
+plot 1528 jobResumed Job0x13893c_30
+bufferplot 1531 pop Buffer0x36190
+bufferplot 1531 pop Buffer0x36190
+plot 1531 analysisRendered 27 P
+plot 1531 jobCompleted Job0x13893c_30
+plot 1531 jobPreempted Job0x13893c_30 -target Job0x1388c8_29
+plot 1531 jobResumed Job0x1388c8_29
+plot 1531 taskArrived Task0x1388c8
+[Job Job0x1388c8_30] initWithTask Task0x1388c8 -name "Decoder 30"
+plot 1531 jobResumed Job0x1388c8_30
+plot 1531 jobPreempted Job0x1388c8_30 -target Job0x1387e0_67126880
+plot 1531 jobResumed Job0x1387e0_67126880
+plot 1537 taskArrived Task0x138a24
+plot 1537 relteqEvent period "QM"
+plot 1537 analysisLatencyStart
+plot 1537 jobPreempted Job0x1387e0_67126880 -target Job0x138a24_0
+plot 1537 jobResumed Job0x138a24_0
+plot 1537 message {waiting for Decoder using component BufferDecoded}
+plot 1537 jobPreempted Job0x138a24_0 -target Job0x1387e0_67126880
+plot 1537 jobResumed Job0x1387e0_67126880
+plot 1550 taskArrived Task0x1389b0
+plot 1550 relteqEvent period "Network"
+plot 1550 taskArrived Task0x13893c
+plot 1550 relteqEvent period "Renderer"
+plot 1550 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_31
+plot 1550 jobResumed Job0x1389b0_31
+[Job Job0x1389b0_32] initWithTask Task0x1389b0 -name "Network 32"
+plot 1550 jobResumed Job0x1389b0_32
+bufferplot 1553 push Buffer0x36150 "31\nB"
+plot 1553 jobPreempted Job0x1389b0_32 -target Job0x1388c8_30
+plot 1553 jobResumed Job0x1388c8_30
+plot 1553 message {executing for 24}
+bufferplot 1577 push Buffer0x36190 "29\nB"
+bufferplot 1577 pop Buffer0x36150
+plot 1577 jobCompleted Job0x1388c8_30
+plot 1577 jobPreempted Job0x1388c8_30 -target Job0x138a24_0
+plot 1577 jobResumed Job0x138a24_0
+plot 1577 message {waiting for Network using component Network}
+plot 1577 jobPreempted Job0x138a24_0 -target Job0x1389b0_32
+plot 1577 jobResumed Job0x1389b0_32
+plot 1577 jobCompleted Job0x1389b0_32
+plot 1577 jobPreempted Job0x1389b0_32 -target Job0x138a24_0
+plot 1577 jobResumed Job0x138a24_0
+plot 1577 message {start mode change} -color green
+plot 1577 message {stop mode change} -color orange
+plot 1577 analysisLatencyStop
+plot 1577 jobPreempted Job0x138a24_0 -target Job0x1389b0_32
+plot 1577 jobResumed Job0x1389b0_32
+plot 1577 jobPreempted Job0x1389b0_32 -target Job0x13893c_30
+plot 1577 jobResumed Job0x13893c_30
+[Job Job0x13893c_31] initWithTask Task0x13893c -name "Renderer 31"
+plot 1577 jobResumed Job0x13893c_31
+bufferplot 1581 pop Buffer0x36190
+bufferplot 1581 pop Buffer0x36190
+plot 1581 analysisRendered 28 B
+plot 1581 jobCompleted Job0x13893c_31
+plot 1581 jobPreempted Job0x13893c_31 -target Job0x1388c8_30
+plot 1581 jobResumed Job0x1388c8_30
+plot 1581 taskArrived Task0x1388c8
+[Job Job0x1388c8_31] initWithTask Task0x1388c8 -name "Decoder 31"
+plot 1581 jobResumed Job0x1388c8_31
+plot 1581 jobPreempted Job0x1388c8_31 -target Job0x1387e0_67126880
+plot 1581 jobResumed Job0x1387e0_67126880
+plot 1590 taskArrived Task0x138a24
+plot 1590 relteqEvent period "QM"
+plot 1590 analysisLatencyStart
+plot 1590 jobPreempted Job0x1387e0_67126880 -target Job0x138a24_0
+plot 1590 jobResumed Job0x138a24_0
+plot 1590 message {waiting for Decoder using component BufferDecoded}
+plot 1590 jobPreempted Job0x138a24_0 -target Job0x1387e0_67126880
+plot 1590 jobResumed Job0x1387e0_67126880
+plot 1600 taskArrived Task0x1389b0
+plot 1600 relteqEvent period "Network"
+plot 1600 taskArrived Task0x13893c
+plot 1600 relteqEvent period "Renderer"
+plot 1600 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_32
+plot 1600 jobResumed Job0x1389b0_32
+[Job Job0x1389b0_33] initWithTask Task0x1389b0 -name "Network 33"
+plot 1600 jobResumed Job0x1389b0_33
+bufferplot 1603 push Buffer0x36150 "32\nB"
+plot 1603 jobPreempted Job0x1389b0_33 -target Job0x1388c8_31
+plot 1603 jobResumed Job0x1388c8_31
+plot 1603 message {executing for 24}
+bufferplot 1627 push Buffer0x36190 "30\nI"
+bufferplot 1627 push Buffer0x36190 "30\nI"
+bufferplot 1627 pop Buffer0x36150
+plot 1627 jobCompleted Job0x1388c8_31
+plot 1627 jobPreempted Job0x1388c8_31 -target Job0x138a24_0
+plot 1627 jobResumed Job0x138a24_0
+plot 1627 message {waiting for Network using component Network}
+plot 1627 jobPreempted Job0x138a24_0 -target Job0x1389b0_33
+plot 1627 jobResumed Job0x1389b0_33
+plot 1628 jobCompleted Job0x1389b0_33
+plot 1628 jobPreempted Job0x1389b0_33 -target Job0x138a24_0
+plot 1628 jobResumed Job0x138a24_0
+plot 1628 message {start mode change} -color green
+plot 1628 message {stop mode change} -color orange
+plot 1628 analysisLatencyStop
+plot 1628 jobPreempted Job0x138a24_0 -target Job0x1389b0_33
+plot 1628 jobResumed Job0x1389b0_33
+plot 1628 jobPreempted Job0x1389b0_33 -target Job0x13893c_31
+plot 1628 jobResumed Job0x13893c_31
+[Job Job0x13893c_32] initWithTask Task0x13893c -name "Renderer 32"
+plot 1628 jobResumed Job0x13893c_32
+bufferplot 1631 pop Buffer0x36190
+plot 1631 analysisRendered 29 B
+plot 1631 jobCompleted Job0x13893c_32
+plot 1631 jobPreempted Job0x13893c_32 -target Job0x1388c8_31
+plot 1631 jobResumed Job0x1388c8_31
+plot 1631 taskArrived Task0x1388c8
+[Job Job0x1388c8_32] initWithTask Task0x1388c8 -name "Decoder 32"
+plot 1631 jobResumed Job0x1388c8_32
+plot 1631 jobPreempted Job0x1388c8_32 -target Job0x1387e0_67126880
+plot 1631 jobResumed Job0x1387e0_67126880
+plot 1643 taskArrived Task0x138a24
+plot 1643 relteqEvent period "QM"
+plot 1643 analysisLatencyStart
+plot 1643 jobPreempted Job0x1387e0_67126880 -target Job0x138a24_0
+plot 1643 jobResumed Job0x138a24_0
+plot 1643 message {waiting for Decoder using component BufferDecoded}
+plot 1643 jobPreempted Job0x138a24_0 -target Job0x1387e0_67126880
+plot 1643 jobResumed Job0x1387e0_67126880
+plot 1650 taskArrived Task0x1389b0
+plot 1650 relteqEvent period "Network"
+plot 1650 taskArrived Task0x13893c
+plot 1650 relteqEvent period "Renderer"
+plot 1650 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_33
+plot 1650 jobResumed Job0x1389b0_33
+[Job Job0x1389b0_34] initWithTask Task0x1389b0 -name "Network 34"
+plot 1650 jobResumed Job0x1389b0_34
+bufferplot 1653 push Buffer0x36150 "33\nP"
+plot 1653 jobPreempted Job0x1389b0_34 -target Job0x1388c8_32
+plot 1653 jobResumed Job0x1388c8_32
+plot 1653 message {executing for 24}
+bufferplot 1677 push Buffer0x36190 "31\nB"
+bufferplot 1677 pop Buffer0x36150
+plot 1677 jobCompleted Job0x1388c8_32
+plot 1677 jobPreempted Job0x1388c8_32 -target Job0x138a24_0
+plot 1677 jobResumed Job0x138a24_0
+plot 1677 message {waiting for Network using component Network}
+plot 1677 jobPreempted Job0x138a24_0 -target Job0x1389b0_34
+plot 1677 jobResumed Job0x1389b0_34
+plot 1677 jobCompleted Job0x1389b0_34
+plot 1677 jobPreempted Job0x1389b0_34 -target Job0x138a24_0
+plot 1677 jobResumed Job0x138a24_0
+plot 1677 message {start mode change} -color green
+plot 1677 message {stop mode change} -color orange
+plot 1677 analysisLatencyStop
+plot 1677 jobPreempted Job0x138a24_0 -target Job0x1389b0_34
+plot 1677 jobResumed Job0x1389b0_34
+plot 1677 jobPreempted Job0x1389b0_34 -target Job0x13893c_32
+plot 1677 jobResumed Job0x13893c_32
+[Job Job0x13893c_33] initWithTask Task0x13893c -name "Renderer 33"
+plot 1677 jobResumed Job0x13893c_33
+bufferplot 1681 pop Buffer0x36190
+bufferplot 1681 pop Buffer0x36190
+plot 1681 analysisRendered 30 I
+plot 1681 jobCompleted Job0x13893c_33
+plot 1681 jobPreempted Job0x13893c_33 -target Job0x1388c8_32
+plot 1681 jobResumed Job0x1388c8_32
+plot 1681 taskArrived Task0x1388c8
+[Job Job0x1388c8_33] initWithTask Task0x1388c8 -name "Decoder 33"
+plot 1681 jobResumed Job0x1388c8_33
+plot 1681 jobPreempted Job0x1388c8_33 -target Job0x1387e0_67126880
+plot 1681 jobResumed Job0x1387e0_67126880
+plot 1696 taskArrived Task0x138a24
+plot 1696 relteqEvent period "QM"
+plot 1696 analysisLatencyStart
+plot 1696 jobPreempted Job0x1387e0_67126880 -target Job0x138a24_0
+plot 1696 jobResumed Job0x138a24_0
+plot 1696 message {waiting for Decoder using component BufferDecoded}
+plot 1696 jobPreempted Job0x138a24_0 -target Job0x1387e0_67126880
+plot 1696 jobResumed Job0x1387e0_67126880
+plot 1700 taskArrived Task0x1389b0
+plot 1700 relteqEvent period "Network"
+plot 1700 taskArrived Task0x13893c
+plot 1700 relteqEvent period "Renderer"
+plot 1700 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_34
+plot 1700 jobResumed Job0x1389b0_34
+[Job Job0x1389b0_35] initWithTask Task0x1389b0 -name "Network 35"
+plot 1700 jobResumed Job0x1389b0_35
+bufferplot 1703 push Buffer0x36150 "34\nB"
+plot 1703 jobPreempted Job0x1389b0_35 -target Job0x1388c8_33
+plot 1703 jobResumed Job0x1388c8_33
+plot 1703 message {executing for 24}
+bufferplot 1727 push Buffer0x36190 "32\nB"
+bufferplot 1727 push Buffer0x36190 "32\nB"
+bufferplot 1727 pop Buffer0x36150
+plot 1727 jobCompleted Job0x1388c8_33
+plot 1727 jobPreempted Job0x1388c8_33 -target Job0x138a24_0
+plot 1727 jobResumed Job0x138a24_0
+plot 1727 message {waiting for Network using component Network}
+plot 1727 jobPreempted Job0x138a24_0 -target Job0x1389b0_35
+plot 1727 jobResumed Job0x1389b0_35
+plot 1728 jobCompleted Job0x1389b0_35
+plot 1728 jobPreempted Job0x1389b0_35 -target Job0x138a24_0
+plot 1728 jobResumed Job0x138a24_0
+plot 1728 message {start mode change} -color green
+plot 1728 message {stop mode change} -color orange
+plot 1728 analysisLatencyStop
+plot 1728 jobPreempted Job0x138a24_0 -target Job0x1389b0_35
+plot 1728 jobResumed Job0x1389b0_35
+plot 1728 jobPreempted Job0x1389b0_35 -target Job0x13893c_33
+plot 1728 jobResumed Job0x13893c_33
+[Job Job0x13893c_34] initWithTask Task0x13893c -name "Renderer 34"
+plot 1728 jobResumed Job0x13893c_34
+bufferplot 1731 pop Buffer0x36190
+plot 1731 analysisRendered 31 B
+plot 1731 jobCompleted Job0x13893c_34
+plot 1731 jobPreempted Job0x13893c_34 -target Job0x1388c8_33
+plot 1731 jobResumed Job0x1388c8_33
+plot 1731 taskArrived Task0x1388c8
+[Job Job0x1388c8_34] initWithTask Task0x1388c8 -name "Decoder 34"
+plot 1731 jobResumed Job0x1388c8_34
+plot 1731 jobPreempted Job0x1388c8_34 -target Job0x1387e0_67126880
+plot 1731 jobResumed Job0x1387e0_67126880
+plot 1749 taskArrived Task0x138a24
+plot 1749 relteqEvent period "QM"
+plot 1749 analysisLatencyStart
+plot 1749 jobPreempted Job0x1387e0_67126880 -target Job0x138a24_0
+plot 1749 jobResumed Job0x138a24_0
+plot 1749 message {waiting for Decoder using component BufferDecoded}
+plot 1749 jobPreempted Job0x138a24_0 -target Job0x1387e0_67126880
+plot 1749 jobResumed Job0x1387e0_67126880
+plot 1750 taskArrived Task0x1389b0
+plot 1750 relteqEvent period "Network"
+plot 1750 taskArrived Task0x13893c
+plot 1750 relteqEvent period "Renderer"
+plot 1750 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_35
+plot 1750 jobResumed Job0x1389b0_35
+[Job Job0x1389b0_36] initWithTask Task0x1389b0 -name "Network 36"
+plot 1750 jobResumed Job0x1389b0_36
+bufferplot 1753 push Buffer0x36150 "35\nB"
+plot 1753 jobPreempted Job0x1389b0_36 -target Job0x1388c8_34
+plot 1753 jobResumed Job0x1388c8_34
+plot 1753 message {executing for 24}
+bufferplot 1777 push Buffer0x36190 "33\nP"
+bufferplot 1777 pop Buffer0x36150
+plot 1777 jobCompleted Job0x1388c8_34
+plot 1777 jobPreempted Job0x1388c8_34 -target Job0x138a24_0
+plot 1777 jobResumed Job0x138a24_0
+plot 1777 message {waiting for Network using component Network}
+plot 1777 jobPreempted Job0x138a24_0 -target Job0x1389b0_36
+plot 1777 jobResumed Job0x1389b0_36
+plot 1777 jobCompleted Job0x1389b0_36
+plot 1777 jobPreempted Job0x1389b0_36 -target Job0x138a24_0
+plot 1777 jobResumed Job0x138a24_0
+plot 1777 message {start mode change} -color green
+plot 1777 message {stop mode change} -color orange
+plot 1777 analysisLatencyStop
+plot 1777 jobPreempted Job0x138a24_0 -target Job0x1389b0_36
+plot 1777 jobResumed Job0x1389b0_36
+plot 1777 jobPreempted Job0x1389b0_36 -target Job0x13893c_34
+plot 1777 jobResumed Job0x13893c_34
+[Job Job0x13893c_35] initWithTask Task0x13893c -name "Renderer 35"
+plot 1777 jobResumed Job0x13893c_35
+bufferplot 1781 pop Buffer0x36190
+bufferplot 1781 pop Buffer0x36190
+plot 1781 analysisRendered 32 B
+plot 1781 jobCompleted Job0x13893c_35
+plot 1781 jobPreempted Job0x13893c_35 -target Job0x1388c8_34
+plot 1781 jobResumed Job0x1388c8_34
+plot 1781 taskArrived Task0x1388c8
+[Job Job0x1388c8_35] initWithTask Task0x1388c8 -name "Decoder 35"
+plot 1781 jobResumed Job0x1388c8_35
+plot 1781 jobPreempted Job0x1388c8_35 -target Job0x1387e0_67126880
+plot 1781 jobResumed Job0x1387e0_67126880
+plot 1800 taskArrived Task0x1389b0
+plot 1800 relteqEvent period "Network"
+plot 1800 taskArrived Task0x13893c
+plot 1800 relteqEvent period "Renderer"
+plot 1800 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_36
+plot 1800 jobResumed Job0x1389b0_36
+[Job Job0x1389b0_37] initWithTask Task0x1389b0 -name "Network 37"
+plot 1800 jobResumed Job0x1389b0_37
+plot 1802 taskArrived Task0x138a24
+plot 1802 relteqEvent period "QM"
+plot 1802 analysisLatencyStart
+plot 1802 jobPreempted Job0x1389b0_37 -target Job0x138a24_0
+plot 1802 jobResumed Job0x138a24_0
+plot 1802 message {waiting for Decoder using component BufferDecoded}
+plot 1802 jobPreempted Job0x138a24_0 -target Job0x1389b0_37
+plot 1802 jobResumed Job0x1389b0_37
+bufferplot 1803 push Buffer0x36150 "36\nI"
+plot 1803 jobPreempted Job0x1389b0_37 -target Job0x1388c8_35
+plot 1803 jobResumed Job0x1388c8_35
+plot 1803 message {executing for 24}
+bufferplot 1827 push Buffer0x36190 "34\nB"
+bufferplot 1827 push Buffer0x36190 "34\nB"
+bufferplot 1827 pop Buffer0x36150
+plot 1827 jobCompleted Job0x1388c8_35
+plot 1827 jobPreempted Job0x1388c8_35 -target Job0x138a24_0
+plot 1827 jobResumed Job0x138a24_0
+plot 1827 message {waiting for Network using component Network}
+plot 1827 jobPreempted Job0x138a24_0 -target Job0x1389b0_37
+plot 1827 jobResumed Job0x1389b0_37
+plot 1828 jobCompleted Job0x1389b0_37
+plot 1828 jobPreempted Job0x1389b0_37 -target Job0x138a24_0
+plot 1828 jobResumed Job0x138a24_0
+plot 1828 message {start mode change} -color green
+plot 1828 message {stop mode change} -color orange
+plot 1828 analysisLatencyStop
+plot 1828 jobPreempted Job0x138a24_0 -target Job0x1389b0_37
+plot 1828 jobResumed Job0x1389b0_37
+plot 1828 jobPreempted Job0x1389b0_37 -target Job0x13893c_35
+plot 1828 jobResumed Job0x13893c_35
+[Job Job0x13893c_36] initWithTask Task0x13893c -name "Renderer 36"
+plot 1828 jobResumed Job0x13893c_36
+bufferplot 1831 pop Buffer0x36190
+plot 1831 analysisRendered 33 P
+plot 1831 jobCompleted Job0x13893c_36
+plot 1831 jobPreempted Job0x13893c_36 -target Job0x1388c8_35
+plot 1831 jobResumed Job0x1388c8_35
+plot 1831 taskArrived Task0x1388c8
+[Job Job0x1388c8_36] initWithTask Task0x1388c8 -name "Decoder 36"
+plot 1831 jobResumed Job0x1388c8_36
+plot 1831 jobPreempted Job0x1388c8_36 -target Job0x1387e0_67126880
+plot 1831 jobResumed Job0x1387e0_67126880
+plot 1850 taskArrived Task0x1389b0
+plot 1850 relteqEvent period "Network"
+plot 1850 taskArrived Task0x13893c
+plot 1850 relteqEvent period "Renderer"
+plot 1850 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_37
+plot 1850 jobResumed Job0x1389b0_37
+[Job Job0x1389b0_38] initWithTask Task0x1389b0 -name "Network 38"
+plot 1850 jobResumed Job0x1389b0_38
+bufferplot 1853 push Buffer0x36150 "37\nB"
+plot 1853 jobCompleted Job0x1389b0_38
+plot 1853 jobPreempted Job0x1389b0_38 -target Job0x13893c_36
+plot 1853 jobResumed Job0x13893c_36
+[Job Job0x13893c_37] initWithTask Task0x13893c -name "Renderer 37"
+plot 1853 jobResumed Job0x13893c_37
+plot 1855 taskArrived Task0x138a24
+plot 1855 relteqEvent period "QM"
+plot 1855 analysisLatencyStart
+plot 1855 jobPreempted Job0x13893c_37 -target Job0x138a24_0
+plot 1855 jobResumed Job0x138a24_0
+plot 1855 message {waiting for Renderer using component BufferDecoded}
+plot 1855 jobPreempted Job0x138a24_0 -target Job0x13893c_37
+plot 1855 jobResumed Job0x13893c_37
+bufferplot 1856 pop Buffer0x36190
+bufferplot 1856 pop Buffer0x36190
+plot 1856 analysisRendered 34 B
+plot 1856 jobCompleted Job0x13893c_37
+plot 1856 jobPreempted Job0x13893c_37 -target Job0x138a24_0
+plot 1856 jobResumed Job0x138a24_0
+plot 1856 message {waiting for Decoder using component BufferDecoded}
+plot 1856 jobPreempted Job0x138a24_0 -target Job0x1388c8_36
+plot 1856 jobResumed Job0x1388c8_36
+plot 1856 message {executing for 24}
+bufferplot 1881 push Buffer0x36190 "35\nB"
+bufferplot 1881 pop Buffer0x36150
+plot 1881 jobPreempted Job0x1388c8_36 -target Job0x13893c_37
+plot 1881 jobResumed Job0x13893c_37
+plot 1881 jobPreempted Job0x13893c_37 -target Job0x1387e0_67126880
+plot 1881 jobResumed Job0x1387e0_67126880
+plot 1900 taskArrived Task0x1389b0
+plot 1900 relteqEvent period "Network"
+plot 1900 taskArrived Task0x13893c
+plot 1900 relteqEvent period "Renderer"
+plot 1900 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_38
+plot 1900 jobResumed Job0x1389b0_38
+[Job Job0x1389b0_39] initWithTask Task0x1389b0 -name "Network 39"
+plot 1900 jobResumed Job0x1389b0_39
+bufferplot 1903 push Buffer0x36150 "38\nB"
+plot 1903 jobPreempted Job0x1389b0_39 -target Job0x1388c8_36
+plot 1903 jobResumed Job0x1388c8_36
+plot 1903 jobCompleted Job0x1388c8_36
+plot 1903 jobPreempted Job0x1388c8_36 -target Job0x138a24_0
+plot 1903 jobResumed Job0x138a24_0
+plot 1903 message {waiting for Network using component Network}
+plot 1903 jobPreempted Job0x138a24_0 -target Job0x1389b0_39
+plot 1903 jobResumed Job0x1389b0_39
+plot 1903 jobCompleted Job0x1389b0_39
+plot 1903 jobPreempted Job0x1389b0_39 -target Job0x138a24_0
+plot 1903 jobResumed Job0x138a24_0
+plot 1903 message {start mode change} -color green
+plot 1903 message {stop mode change} -color orange
+plot 1903 analysisLatencyStop
+plot 1903 jobPreempted Job0x138a24_0 -target Job0x1389b0_39
+plot 1903 jobResumed Job0x1389b0_39
+plot 1903 jobPreempted Job0x1389b0_39 -target Job0x13893c_37
+plot 1903 jobResumed Job0x13893c_37
+[Job Job0x13893c_38] initWithTask Task0x13893c -name "Renderer 38"
+plot 1903 jobResumed Job0x13893c_38
+bufferplot 1906 pop Buffer0x36190
+plot 1906 analysisRendered 35 B
+plot 1906 jobCompleted Job0x13893c_38
+plot 1906 jobPreempted Job0x13893c_38 -target Job0x1388c8_36
+plot 1906 jobResumed Job0x1388c8_36
+plot 1906 taskArrived Task0x1388c8
+[Job Job0x1388c8_37] initWithTask Task0x1388c8 -name "Decoder 37"
+plot 1906 jobResumed Job0x1388c8_37
+plot 1906 jobPreempted Job0x1388c8_37 -target Job0x1387e0_67126880
+plot 1906 jobResumed Job0x1387e0_67126880
+plot 1908 taskArrived Task0x138a24
+plot 1908 relteqEvent period "QM"
+plot 1908 analysisLatencyStart
+plot 1908 jobPreempted Job0x1387e0_67126880 -target Job0x138a24_0
+plot 1908 jobResumed Job0x138a24_0
+plot 1908 message {waiting for Decoder using component BufferDecoded}
+plot 1908 jobPreempted Job0x138a24_0 -target Job0x1387e0_67126880
+plot 1908 jobResumed Job0x1387e0_67126880
+plot 1950 taskArrived Task0x1389b0
+plot 1950 relteqEvent period "Network"
+plot 1950 taskArrived Task0x13893c
+plot 1950 relteqEvent period "Renderer"
+plot 1950 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_39
+plot 1950 jobResumed Job0x1389b0_39
+[Job Job0x1389b0_40] initWithTask Task0x1389b0 -name "Network 40"
+plot 1950 jobResumed Job0x1389b0_40
+bufferplot 1953 push Buffer0x36150 "39\nP"
+plot 1953 jobPreempted Job0x1389b0_40 -target Job0x1388c8_37
+plot 1953 jobResumed Job0x1388c8_37
+plot 1953 message {executing for 24}
+plot 1961 taskArrived Task0x138a24
+plot 1961 relteqEvent period "QM"
+plot 1961 analysisLatencyStart
+bufferplot 1977 push Buffer0x36190 "36\nI"
+bufferplot 1977 push Buffer0x36190 "36\nI"
+bufferplot 1977 pop Buffer0x36150
+plot 1977 jobCompleted Job0x1388c8_37
+plot 1977 jobPreempted Job0x1388c8_37 -target Job0x138a24_0
+plot 1977 jobResumed Job0x138a24_0
+plot 1977 message {waiting for Network using component Network}
+plot 1977 jobPreempted Job0x138a24_0 -target Job0x1389b0_40
+plot 1977 jobResumed Job0x1389b0_40
+plot 1978 jobCompleted Job0x1389b0_40
+plot 1978 jobPreempted Job0x1389b0_40 -target Job0x138a24_0
+plot 1978 jobResumed Job0x138a24_0
+plot 1978 message {start mode change} -color green
+plot 1978 message {stop mode change} -color orange
+plot 1978 analysisLatencyStop
+plot 1978 message {Task 'QM' missed its deadline}
+plot 1978 message {start mode change} -color green
+plot 1978 message {stop mode change} -color orange
+plot 1978 analysisLatencyStop
+plot 1978 jobPreempted Job0x138a24_0 -target Job0x1389b0_40
+plot 1978 jobResumed Job0x1389b0_40
+plot 1978 jobPreempted Job0x1389b0_40 -target Job0x13893c_38
+plot 1978 jobResumed Job0x13893c_38
+[Job Job0x13893c_39] initWithTask Task0x13893c -name "Renderer 39"
+plot 1978 jobResumed Job0x13893c_39
+bufferplot 1981 pop Buffer0x36190
+bufferplot 1981 pop Buffer0x36190
+plot 1981 analysisRendered 36 I
+plot 1981 jobCompleted Job0x13893c_39
+plot 1981 jobPreempted Job0x13893c_39 -target Job0x1388c8_37
+plot 1981 jobResumed Job0x1388c8_37
+plot 1981 taskArrived Task0x1388c8
+[Job Job0x1388c8_38] initWithTask Task0x1388c8 -name "Decoder 38"
+plot 1981 jobResumed Job0x1388c8_38
+plot 1981 jobPreempted Job0x1388c8_38 -target Job0x1387e0_67126880
+plot 1981 jobResumed Job0x1387e0_67126880
+plot 2000 taskArrived Task0x1389b0
+plot 2000 relteqEvent period "Network"
+plot 2000 taskArrived Task0x13893c
+plot 2000 relteqEvent period "Renderer"
+plot 2000 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_40
+plot 2000 jobResumed Job0x1389b0_40
+[Job Job0x1389b0_41] initWithTask Task0x1389b0 -name "Network 41"
+plot 2000 jobResumed Job0x1389b0_41
+bufferplot 2003 push Buffer0x36150 "40\nB"
+plot 2003 jobCompleted Job0x1389b0_41
+plot 2003 jobPreempted Job0x1389b0_41 -target Job0x13893c_39
+plot 2003 jobResumed Job0x13893c_39
+[Job Job0x13893c_40] initWithTask Task0x13893c -name "Renderer 40"
+plot 2003 jobResumed Job0x13893c_40
+plot 2006 message {Renderer received NULL packet, rendering last frame}
+plot 2006 analysisRendered 36 I
+plot 2006 jobCompleted Job0x13893c_40
+plot 2006 jobPreempted Job0x13893c_40 -target Job0x1388c8_38
+plot 2006 jobResumed Job0x1388c8_38
+plot 2006 message {executing for 24}
+plot 2014 taskArrived Task0x138a24
+plot 2014 relteqEvent period "QM"
+plot 2014 analysisLatencyStart
+plot 2014 jobPreempted Job0x1388c8_38 -target Job0x138a24_0
+plot 2014 jobResumed Job0x138a24_0
+plot 2014 message {waiting for Decoder using component BufferDecoded}
+plot 2014 jobPreempted Job0x138a24_0 -target Job0x1388c8_38
+plot 2014 jobResumed Job0x1388c8_38
+bufferplot 2030 push Buffer0x36190 "37\nB"
+bufferplot 2031 push Buffer0x36190 "37\nB"
+bufferplot 2031 pop Buffer0x36150
+plot 2031 jobCompleted Job0x1388c8_38
+plot 2031 jobPreempted Job0x1388c8_38 -target Job0x138a24_0
+plot 2031 jobResumed Job0x138a24_0
+plot 2031 message {start mode change} -color green
+plot 2031 message {stop mode change} -color orange
+plot 2031 analysisLatencyStop
+plot 2031 jobPreempted Job0x138a24_0 -target Job0x1388c8_38
+plot 2031 jobResumed Job0x1388c8_38
+plot 2031 taskArrived Task0x1388c8
+[Job Job0x1388c8_39] initWithTask Task0x1388c8 -name "Decoder 39"
+plot 2031 jobResumed Job0x1388c8_39
+plot 2031 jobPreempted Job0x1388c8_39 -target Job0x1387e0_67126880
+plot 2031 jobResumed Job0x1387e0_67126880
+plot 2050 taskArrived Task0x1389b0
+plot 2050 relteqEvent period "Network"
+plot 2050 taskArrived Task0x13893c
+plot 2050 relteqEvent period "Renderer"
+plot 2050 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_41
+plot 2050 jobResumed Job0x1389b0_41
+[Job Job0x1389b0_42] initWithTask Task0x1389b0 -name "Network 42"
+plot 2050 jobResumed Job0x1389b0_42
+bufferplot 2053 push Buffer0x36150 "41\nB"
+plot 2053 jobCompleted Job0x1389b0_42
+plot 2053 jobPreempted Job0x1389b0_42 -target Job0x13893c_40
+plot 2053 jobResumed Job0x13893c_40
+[Job Job0x13893c_41] initWithTask Task0x13893c -name "Renderer 41"
+plot 2053 jobResumed Job0x13893c_41
+bufferplot 2056 pop Buffer0x36190
+bufferplot 2056 pop Buffer0x36190
+plot 2056 analysisRendered 37 B
+plot 2056 jobCompleted Job0x13893c_41
+plot 2056 jobPreempted Job0x13893c_41 -target Job0x1388c8_39
+plot 2056 jobResumed Job0x1388c8_39
+plot 2056 message {executing for 24}
+plot 2067 taskArrived Task0x138a24
+plot 2067 relteqEvent period "QM"
+plot 2067 analysisLatencyStart
+plot 2067 jobPreempted Job0x1388c8_39 -target Job0x138a24_0
+plot 2067 jobResumed Job0x138a24_0
+plot 2067 message {waiting for Decoder using component BufferDecoded}
+plot 2067 jobPreempted Job0x138a24_0 -target Job0x1388c8_39
+plot 2067 jobResumed Job0x1388c8_39
+bufferplot 2081 push Buffer0x36190 "38\nB"
+bufferplot 2081 pop Buffer0x36150
+plot 2081 jobCompleted Job0x1388c8_39
+plot 2081 jobPreempted Job0x1388c8_39 -target Job0x138a24_0
+plot 2081 jobResumed Job0x138a24_0
+plot 2081 message {start mode change} -color green
+plot 2081 message {stop mode change} -color orange
+plot 2081 analysisLatencyStop
+plot 2081 jobPreempted Job0x138a24_0 -target Job0x1388c8_39
+plot 2081 jobResumed Job0x1388c8_39
+plot 2081 taskArrived Task0x1388c8
+[Job Job0x1388c8_40] initWithTask Task0x1388c8 -name "Decoder 40"
+plot 2081 jobResumed Job0x1388c8_40
+plot 2081 jobPreempted Job0x1388c8_40 -target Job0x1387e0_67126880
+plot 2081 jobResumed Job0x1387e0_67126880
+plot 2100 taskArrived Task0x1389b0
+plot 2100 relteqEvent period "Network"
+plot 2100 taskArrived Task0x13893c
+plot 2100 relteqEvent period "Renderer"
+plot 2100 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_42
+plot 2100 jobResumed Job0x1389b0_42
+[Job Job0x1389b0_43] initWithTask Task0x1389b0 -name "Network 43"
+plot 2100 jobResumed Job0x1389b0_43
+bufferplot 2103 push Buffer0x36150 "42\nI"
+plot 2103 jobCompleted Job0x1389b0_43
+plot 2103 jobPreempted Job0x1389b0_43 -target Job0x13893c_41
+plot 2103 jobResumed Job0x13893c_41
+[Job Job0x13893c_42] initWithTask Task0x13893c -name "Renderer 42"
+plot 2103 jobResumed Job0x13893c_42
+bufferplot 2106 pop Buffer0x36190
+plot 2106 analysisRendered 38 B
+plot 2106 jobCompleted Job0x13893c_42
+plot 2106 jobPreempted Job0x13893c_42 -target Job0x1388c8_40
+plot 2106 jobResumed Job0x1388c8_40
+plot 2106 message {executing for 24}
+plot 2120 taskArrived Task0x138a24
+plot 2120 relteqEvent period "QM"
+plot 2120 analysisLatencyStart
+plot 2120 jobPreempted Job0x1388c8_40 -target Job0x138a24_0
+plot 2120 jobResumed Job0x138a24_0
+plot 2120 message {waiting for Decoder using component BufferDecoded}
+plot 2120 jobPreempted Job0x138a24_0 -target Job0x1388c8_40
+plot 2120 jobResumed Job0x1388c8_40
+bufferplot 2131 push Buffer0x36190 "39\nP"
+bufferplot 2131 push Buffer0x36190 "39\nP"
+bufferplot 2131 pop Buffer0x36150
+plot 2131 jobCompleted Job0x1388c8_40
+plot 2131 jobPreempted Job0x1388c8_40 -target Job0x138a24_0
+plot 2131 jobResumed Job0x138a24_0
+plot 2131 message {start mode change} -color green
+plot 2131 message {stop mode change} -color orange
+plot 2131 analysisLatencyStop
+plot 2131 jobPreempted Job0x138a24_0 -target Job0x1388c8_40
+plot 2131 jobResumed Job0x1388c8_40
+plot 2131 taskArrived Task0x1388c8
+[Job Job0x1388c8_41] initWithTask Task0x1388c8 -name "Decoder 41"
+plot 2131 jobResumed Job0x1388c8_41
+plot 2131 jobPreempted Job0x1388c8_41 -target Job0x1387e0_67126880
+plot 2131 jobResumed Job0x1387e0_67126880
+plot 2150 taskArrived Task0x1389b0
+plot 2150 relteqEvent period "Network"
+plot 2150 taskArrived Task0x13893c
+plot 2150 relteqEvent period "Renderer"
+plot 2150 jobPreempted Job0x1387e0_67126880 -target Job0x1389b0_43
+plot 2150 jobResumed Job0x1389b0_43
+[Job Job0x1389b0_44] initWithTask Task0x1389b0 -name "Network 44"
+plot 2150 jobResumed Job0x1389b0_44
+bufferplot 2153 push Buffer0x36150 "43\nB"
+plot 2153 jobCompleted Job0x1389b0_44
+plot 2153 jobPreempted Job0x1389b0_44 -target Job0x13893c_42
+plot 2153 jobResumed Job0x13893c_42
+[Job Job0x13893c_43] initWithTask Task0x13893c -name "Renderer 43"
+plot 2153 jobResumed Job0x13893c_43
+bufferplot 2156 pop Buffer0x36190
+bufferplot 2156 pop Buffer0x36190
+plot 2156 analysisRendered 39 P
+plot 2156 jobCompleted Job0x13893c_43
+plot 2156 jobPreempted Job0x13893c_43 -target Job0x1388c8_41
+plot 2156 jobResumed Job0x1388c8_41
+plot 2156 message {executing for 24}
+plot 2173 taskArrived Task0x138a24
+plot 2173 relteqEvent period "QM"
+plot 2173 analysisLatencyStart
+plot 2173 jobPreempted Job0x1388c8_41 -target Job0x138a24_0
+plot 2173 jobResumed Job0x138a24_0
+plot 2173 message {waiting for Decoder using component BufferDecoded}
+plot 2173 jobPreempted Job0x138a24_0 -target Job0x1388c8_41
+plot 2173 jobResumed Job0x1388c8_41
+bufferplot 2181 push Buffer0x36190 "40\nB"
+bufferplot 2181 pop Buffer0x36150
+plot 2181 jobCompleted Job0x1388c8_41
+plot 2181 jobPreempted Job0x1388c8_41 -target Job0x138a24_0
+plot 2181 jobResumed Job0x138a24_0
+plot 2181 message {start mode change} -color green
+plot 2181 message {stop mode change} -color orange
+plot 2181 analysisLatencyStop
+plot 2181 jobPreempted Job0x138a24_0 -target Job0x1388c8_41
+plot 2181 jobResumed Job0x1388c8_41
+plot 2181 taskArrived Task0x1388c8
+[Job Job0x1388c8_42] initWithTask Task0x1388c8 -name "Decoder 42"
+plot 2181 jobResumed Job0x1388c8_42
+plot 2181 jobPreempted Job0x1388c8_42 -target Job0x1387e0_67126880
+plot 2181 jobResumed Job0x1387e0_67126880
+plot 2200 relteqEvent delay "Setup"
+plot 2200 taskArrived Task0x1389b0
+plot 2200 relteqEvent period "Network"
+plot 2200 taskArrived Task0x13893c
+plot 2200 relteqEvent period "Renderer"
+plot 2200 jobPreempted Job0x1387e0_67126880 -target Job0x138854_0
+plot 2200 jobResumed Job0x138854_0
+plot 2200 analysisSummary

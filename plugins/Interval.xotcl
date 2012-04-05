@@ -1,0 +1,35 @@
+
+RealtimePlot instproc interval {time args} {
+  set message ""
+  set color black
+  
+  parseArgs $args {message color}
+  
+  my instvar bottomY
+  my instvar c
+  RealtimePlot instvar intervalHeight
+  RealtimePlot instvar intervalDash
+  RealtimePlot instvar intervalColor
+  
+  # check if intervals were already drawn
+  if {[llength [$c find withtag interval]]} {
+    # center the previous label, if any
+    if {[llength [$c find withtag "interval&&label&&current"]]} {
+      set tag [$c find withtag "interval&&label&&current"]
+      set x [expr ([my xForTime $time] - [lindex [$c coords $tag] 0])/2]
+      $c move $tag $x 0
+      $c dtag $tag current
+    }
+  } else {
+    # move the bottom
+    incr bottomY $intervalHeight
+  }
+  
+  my drawVerticalLine $time 0 $bottomY -message $message -dash $intervalDash -color $intervalColor -tags "interval line"
+
+  if {[llength $message]} {
+    set y [expr $bottomY - $intervalHeight/2]
+    my drawText $time $y $message -color $color -tags "interval label current"
+  }
+}
+

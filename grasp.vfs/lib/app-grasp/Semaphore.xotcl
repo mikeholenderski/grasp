@@ -1,0 +1,126 @@
+package require common
+
+bind . 
+
+Class Semaphore -parameter {{name ""} {state 0} {waiting ""}}
+
+Semaphore instproc initWith {args} {
+  set optional {name}
+  
+  parseArgs $args $optional
+  
+  if {[info exists name]} {
+    my name $name
+  } else {
+    my name "?"
+  }
+    
+  foreach argument $optional {
+    if {[info exists $argument]} {
+      my $argument [set $argument]
+    }
+  }
+
+  my waiting [Queue new]
+  
+  return [self]
+}
+
+Semaphore proc getWithName {name} {
+  foreach semaphore [Semaphore info instances] {
+    if {[string match [$semaphore set name] $name]} {
+      return $semaphore
+    }
+  }
+  return ""
+}
+
+Semaphore proc reset {} {
+  foreach semaphore [Semaphore info instances] { $semaphore destroy }
+}
+
+#
+# Lock the semaphore. args refers to the locking entity.
+# Returns 1 if blocked, 0 otherwise.
+#
+
+Semaphore instproc take {args} {
+  my instvar state
+  my instvar waiting
+  
+  if {$state == 0} {
+    if {[llength $args]} {
+      $waiting push $args
+    }
+    return 1
+    
+  } else {
+    set state [expr $state - 1]
+    return 0
+  }
+}
+
+#
+# Unlock the semaphore. args refers to the unlocking entity.
+#
+
+Semaphore instproc give {args} {
+  my instvar state
+  my instvar waiting
+  
+  incr state
+  
+  # wakeup a waiting task if semaphore was 0
+  if {$state == 1} {
+    return [$waiting pop]
+  }
+  
+  return ""
+}
+
+RealtimePlot instproc jobAcquiredSemaphore {time job semaphore args} {  
+  checkClass $job Job
+  checkClass $semaphore Semaphore
+  
+  set state undefined
+  parseArgs $args {state}
+  
+  if {[string match $state undefined]} {
+    $semaphore state [expr [$semaphore state] - 1]    
+  } else {
+    $semaphore state $state
+  }
+  
+  my message $time "[$job name] lowerd semaphore [$semaphore name].\nIt now has a value of [$semaphore state]." -shape $::Settings(shape.semaphore.acquired) -color $::Settings(color.semaphore.acquired)
+}
+
+RealtimePlot instproc jobSuspendedOnSemaphore {time job semaphore args} {  
+  checkClass $job Job
+  checkClass $semaphore Semaphore
+  
+  set state undefined
+  parseArgs $args {state}
+    
+  my message $time "[$job name] suspended on semaphore [$semaphore name]." -shape $::Settings(shape.semaphore.suspended) -color $::Settings(color.semaphore.suspended)
+}
+
+RealtimePlot instproc jobReleasedSemaphore {time job semaphore args} {  
+  checkClass $job Job
+  checkClass $semaphore Semaphore
+
+  set state undefined
+  parseArgs $args {state}
+  
+  if {[string match $state undefined]} {
+    $semaphore state [expr [$semaphore state] + 1]    
+  } else {
+    $semaphore state $state
+  }
+
+  my message $time "[$job name] raised semaphore [$semaphore name].\nIt now has a value of [$semaphore state]." -shape $::Settings(shape.semaphore.released) -color $::Settings(color.semaphore.released)
+}
+
+
+proc newSemaphore {id args} {
+  eval [Semaphore $id] initWith $args
+}

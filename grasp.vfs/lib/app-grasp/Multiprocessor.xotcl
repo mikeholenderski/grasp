@@ -1,0 +1,199 @@
+#
+# This is an implementatio of time synchronization protocol described in our
+# submission to the Journal of System Architectures, 2012, which is based on
+# [Maillet et al, 1995]
+#
+
+package require interpolate
+
+namespace eval sync {
+  
+  proc syncSent {time source target message} {
+    variable syncSent 
+    variable syncReceived
+    variable syncMessages
+    set id $source.$target.$message
+  
+    # store the message ids of completed transfers
+    if {[info exists syncReceived($id)]} {
+      lappend syncMessages($source.$target) $message
+    }
+    
+    if {[info exists syncSent($id)]} {
+      warning "syncSend: overwriting syncSent($id)"
+    }
+    set syncSent($id) $time
+  }
+  
+  proc syncReceived {time source target message} {
+    variable syncSent 
+    variable syncReceived 
+    variable syncMessages
+    set id $source.$target.$message
+  
+    # store the message ids of completed transfers
+    if {[info exists syncSent($id)]} {
+      lappend syncMessages($source.$target) $message
+    }
+    
+    if {[info exists syncReceived($id)]} {
+      warning "syncSend: overwriting syncReceived($id)"
+    }
+    set syncReceived($id) $time
+  }
+  
+  #
+  # Check is the two lists contain the same elements
+  #
+  
+  proc sameLists {A B} {
+    if {[llength $A] != [llength $B]} { return 0 }
+    
+    set A [lsort $A]
+    set B [lsort $B]
+    
+    foreach a $A b $B {
+      if {"$a" ne "$b"} { return 0 }
+    }
+    
+    return 1
+  }
+  
+  proc syncTime {} {
+    variable syncSent 
+    variable syncReceived 
+    variable syncMessages
+    variable alpha
+    variable beta
+    
+    array set clusters {}
+    foreach name [array names syncMessages] {
+      foreach {source target} [split $name .] {}
+      
+      # identify clusters of synchronized nodes
+      set found 0
+      foreach {k c} [array get clusters] {
+        if {[lsearch $c $source] > -1 && [lsearch $c $target] > -1} {
+          set found 1
+          break
+        }
+        if {[lsearch $c $source] > -1} {
+          lappend clusters($k) $target
+          set found 1
+          break
+        }
+        if {[lsearch $c $target] > -1} {
+          lappend clusters($k) $source
+          set found 1
+          break
+        }
+      }
+      if (!$found) {
+        set clusters([llength [array names clusters]]) [list $source $target]
+      }
+
+      # for each node store the dependent nodes
+      if {![info exists dependent($source)] || [lsearch $dependent($source) $target] < 0} {
+        lappend dependent($source) $target
+      }
+      if {![info exists dependent($target)] || [lsearch $dependent($target) $source] < 0} {       
+       lappend dependent($target) $source
+      }
+    }
+        
+    # idenitfy a reference node for each cluster, i.e. one from which all other 
+    # nodes in the cluster are reachable
+    # NOTE: transitive syncronization is not supported yet!
+    set refs {}
+    foreach {k c} [array get clusters] {
+      set ref ""
+      foreach n $c {
+        if {[sameLists $c [concat $n $dependent($n)]]} { set ref $n ; break }
+      }
+      if {[llength $ref]} {
+        lappend refs $ref
+      } else {
+        error "transitive time synchronization is not supported"
+      }  
+    }
+    
+    # represent the collected sync times in matrix form
+    # using the 'ref' and 'j' notation from [Maillet et al, 1995])
+    foreach ref $refs {
+      if {[info exists alpha($ref)]} { warning "overwriting time sync paramters for node '$ref'" } 
+      set alpha($ref) 0
+      set beta($ref) 1
+      foreach j $dependent($ref) {
+        if {[info exists alpha($j)]} { warning "overwriting time sync paramters for node '$j'" } 
+
+        set X1 {}
+        set X2 {}
+        set Y {}
+        if {[info exists syncMessages($ref.$j)]} {
+          foreach m $syncMessages($ref.$j) {
+            lappend X1 1
+            lappend X2 $syncSent($ref.$j.$m)
+            lappend Y $syncReceived($ref.$j.$m)
+          }
+        }
+        if {[info exists syncMessages($j.$ref)]} {
+          foreach m $syncMessages($j.$ref) {
+            lappend X1 1
+            lappend X2 $syncReceived($j.$ref.$m)
+            lappend Y $syncSent($j.$ref.$m)
+          }
+        }
+        set X [list $X1 $X2]
+ 
+        # compute a linear interpolation of the collected sync times
+        foreach {a b} [::math::linearalgebra::interpolate $X $Y] {}
+        set alpha($j) $a
+        set beta($j) $b
+      }
+    }
+        
+    # clear the data collected so far
+    variable syncSent 
+    variable syncReceived 
+    array unset syncSent
+    array unset syncReceived
+    array unset syncTimes
+  }
+  
+  proc timeOnProcessor {time processor} {
+    variable alpha
+    variable beta
+    
+    set processor [string trimleft $processor :]
+
+    if {[info exists alpha($processor)] && [info exists beta($processor)]} {
+      return [expr $alpha($processor) + double($beta($processor))*$time]
+    } else {
+      puts "Time on processor '$processor' is not synchronized"
+      return $time
+    }
+  }
+  
+  namespace export syncSent syncReceived timeOnProcessor
+}
+
+namespace import sync::*
+
+# sync times during the preprocessing phase
+
+proc syncPreprocessor {trace} {
+  # TODO: this is a lousy way to evalue the trace, since it does not allow
+  # for arbitrary scripts in the trace.
+  foreach line [split $trace \n] {
+    if {[regexp {plot ([0-9]+) (syncSent|syncReceived) (.+)} $line _ time command args]} {
+      eval sync::$command $time $args
+    }
+  }
+  
+  # Since during the first read of the trace the sync commands were executed,
+  # all that remains to be done is to compute the local time parameters
+  sync::syncTime
+  
+  return $trace
+}
+addPreprocessor syncPreprocessor

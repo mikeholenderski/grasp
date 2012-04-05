@@ -1,0 +1,219 @@
+#
+# A FIFO queue. XOTcl implementation.
+#
+
+package require common
+
+Class Queue -parameter {{queue {}}}
+
+#
+# queue: The contents of teh queue.
+#
+
+
+#
+# Pop from the head of the queue (i.e. the end of the queue list)
+#
+
+Queue instproc pop {args} {
+  set strict 0
+  
+  parseArgs $args {strict}
+  
+  set queue [my queue]
+  
+  set item {}
+  if {[llength $queue] > 1} {
+    set item [lindex $queue end]
+    my queue [lrange $queue 0 end-1]  
+  } elseif {[llength $queue] == 1} {
+    set item [lindex $queue end]
+    my queue {}
+  } elseif {$strict} {
+    error::fatal "trying to pop an empty queue $queue"
+  }
+  
+  return $item
+}
+
+#
+# Push items in order at the end of the tail, i.e. at the beginnig of the list. FIFO order.
+#
+
+Queue instproc push {element} {
+  my queue [linsert [my queue] 0 $element]  
+  return ""
+}
+
+
+#
+# Insert an element into the queue at a particular index
+#
+
+Queue instproc insert {index element} {
+  my queue [linsert [my queue] $index $element]
+}
+
+#
+# Insert an element into the queue, treating it as priority queue, ordered by property.
+# The head points to the element with the largest priority.
+#
+
+Queue instproc insertDescending {element property} {
+  if {![llength $property]} {
+    error "priority field not set for queue [self]"
+  }
+
+  if {![llength $element]} {
+    error "trying to insert an empty element"
+  }
+
+  set priority [$element $property]
+  set i 0
+  while {$i < [llength [my queue]] && $priority > [[lindex [my queue] $i] $property]} {
+    incr i
+  }
+  
+  my insert $i $element
+}
+
+#
+# Insert an element into the queue, treating it as priority queue, ordered by property.
+# The head points to the element with the smallest priority.
+#
+
+Queue instproc insertAscending {element property} {
+  if {![llength $property]} {
+    error "priority field not set for queue [self]"
+  }
+
+  if {![llength $element]} {
+    error "trying to insert an empty element"
+  }
+  
+  set priority [$element $property]
+  set i 0
+  while {$i < [llength [my queue]] && $priority < [[lindex [my queue] $i] $property]} {
+    incr i
+  }
+    
+  my insert $i $element
+}
+
+#
+# Return the queue head, without popping.
+#
+
+Queue instproc peek {} {
+  if {[llength [my queue]] > 0} {
+    return [lindex [my queue] end]
+  } else {
+    return ""
+  }
+}
+
+#
+# Return the length of the queue.
+#
+
+Queue instproc length {} {
+  return [llength [my queue]]
+}
+
+#
+# Remove an element. Note that all occurences of the element are removed.
+#
+
+Queue instproc remove {element} {
+  set ok 0
+  for {set i 0} {$i < [llength [my queue]]} {incr i} {
+    set queued [lindex [my queue] $i]
+    if {[string match $queued $element]} {
+      my queue [lreplace [my queue] $i $i]
+      set ok 1
+    }
+  }
+  
+  return $ok
+}
+
+#
+# Delete an element with a particular property value
+#
+
+Queue instproc deleteWithProperty {name value} {
+  for {set i 0} {$i < [llength [my queue]]} {incr i} {
+    set queued [lindex [my queue] $i]
+    if {[string match [$queued $name] $value]} {
+      my queue [lreplace [my queue] $i $i]
+      return 1
+    }
+  }
+  
+  return 0
+}
+
+#
+# Clear the contents of the queue.
+#
+
+Queue instproc clear {args} {
+  set destroy 0
+  
+  parseArgs $args {destroy}
+  
+  if {$destroy} {
+    foreach element [my queue] {
+      catch {$element destroy}
+    }
+  }
+
+  my set queue {}
+  return ""
+}
+
+#
+# Compare function, used for sorting. Both arguments are XOTcl objects. 
+# Compres two elements on a particualr field.
+#
+
+proc compareField {field a b} {
+  if {[$a set $field] < [$b set $field]} {
+    return -1
+  } elseif {[$a set $field] == [$b set $field]} {
+    return 0
+  } else {
+    return 1
+  }
+}
+
+#
+# Sort the queue. Note that the FIFO order will be disrupted.
+#
+
+Queue instproc sort {field} {
+  my set queue [lsort -command "compareField $field" [my queue]]
+}
+  
+#
+# A stack, i.e. a queue returning the elements in LIFO order
+#
+
+Class LifoQueue -superclass Queue  
+
+LifoQueue instproc push {args} {
+  my queue [concat [my queue] $args]  
+  return ""
+}
+  
+Class PriorityQueue -superclass Queue -parameter {{field ""}}
+
+#
+# Overwrite the push command, to insert events on to the priority according to the field.
+#
+
+PriorityQueue instproc push {args} {
+  foreach element $args {
+    my insertAscending $element [my field]
+  }
+}

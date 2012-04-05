@@ -1,0 +1,110 @@
+Class Mutex -parameter {{name ""} {color ""} {pattern ""} {processor ""}}
+
+addHandler PlotReset "Mutex reset"
+addHandler TraceFinished "Mutex traceFinished"
+addHandler Zoomed "Mutex zoomed"
+
+Mutex proc reset {} {
+  foreach mutex [Mutex info instances -closure] { $mutex destroy }
+}
+
+Mutex instproc initWith {args} {
+  
+  set color ""
+  set pattern ""
+  
+  set optional {name color pattern processor}
+  
+  parseArgs $args $optional
+  
+  if {[info exists name]} {
+    my name $name
+  } else {
+    my name "?"
+  }
+
+  # set default color, if custom color not specified
+  if {![llength $color]} {
+    set color $::Settings(color.task.criticalSection)
+  }
+  
+  # set default pattern, if custom color not specified
+  if {![llength $pattern]} {
+    set pattern $::Settings(pattern.task.criticalSection)
+  }
+    
+  foreach argument $optional {
+    if {[info exists $argument]} {
+      my $argument [set $argument]
+    }
+  }
+
+  # make sure that the pattern is pointing to a file, in case of custom patterns
+  my pattern [patternForKey $pattern]
+  
+  return [self]
+}
+
+Mutex proc reset {} {
+  foreach mutex [Mutex info instances -closure] { $mutex destroy }
+}
+
+Mutex proc traceFinished {} {
+  set mutexes [Mutex info instances -closure]
+  # add a legend to each plot, if any mutex was used
+  if {[llength $mutexes]} {
+    foreach plot [RealtimePlot info instances -closure] {
+      set legend {}
+      foreach mutex $mutexes {
+        lappend legend [list task $mutex] 
+      }
+      $plot drawLegend bottom $legend -legendTag legendmutexes -title Mutexes
+    }
+  }
+  Mutex zoomed
+}
+
+Mutex proc zoomed {} {
+  set mutexes [Mutex info instances -closure]
+  # add a legend to each plot, if any mutex was used
+  if {[llength $mutexes]} {
+    foreach plot [RealtimePlot info instances -closure] {
+      RealtimePlot instvar legendItemHeight
+      RealtimePlot instvar legendItemMargin
+      if {[checkCollapsedMode]} {
+        set offsetY [expr $legendItemHeight + $legendItemMargin]
+      } else {
+        set offsetY 0
+      }
+      $plot centerHorizontally legendmutexes $offsetY
+    }
+  }
+}
+
+RealtimePlot instproc jobAcquiredMutex {time job mutex} {  
+  checkClass $job Job
+
+  # add mutex to the list of mutexes acquired by the job
+  $job lappend mutexes $mutex
+  
+  my jobResumed $time $job
+}
+
+RealtimePlot instproc jobReleasedMutex {time job mutex} {  
+  checkClass $job Job
+
+  # remove it from the locked mutexes
+  set i [lsearch [$job mutexes] $mutex]
+  $job mutexes [lreplace [$job mutexes] $i $i]
+
+  my jobResumed $time $job
+  
+  # delete the current tag from the mutex rectangle
+  my instvar c
+  set tag [$c find withtag "mutex.$mutex && current"]
+  $c dtag $tag current
+}
+
+proc newMutex {id args} {
+  eval [Mutex $id] initWith $args
+}

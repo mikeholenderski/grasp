@@ -1,0 +1,18 @@
+newTask task1 -priority 1 -name "Task 1" -color orange1
+newTask task2 -priority 2 -name "Task 2" -color darkgray
+newMutex mutex1 -name "Mutex 1" -color red -pattern lines_up
+newMutex mutex2 -name "Mutex 2" -color blue -pattern lines_down
+plot 0 jobArrived job2.1 task2
+plot 0 jobResumed job2.1
+plot 10 jobAcquiredMutex job2.1 mutex1
+plot 13 jobAcquiredMutex job2.1 mutex2
+plot 15 jobArrived job1.1 task1
+plot 17 jobReleasedMutex job2.1 mutex2
+plot 20 jobReleasedMutex job2.1 mutex1
+plot 20 jobPreempted job2.1 -target job1.1
+plot 20 jobResumed job1.1
+plot 20 jobAcquiredMutex job1.1 mutex1
+plot 25 jobReleasedMutex job1.1 mutex1
+plot 30 jobCompleted job1.1 -target job2.1
+plot 30 jobResumed job2.1
+plot 45 jobCompleted job2.1

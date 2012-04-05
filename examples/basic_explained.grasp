@@ -1,0 +1,65 @@
+#
+# This is an example trace, demonstrating the main Grasp events and the structure of a Grasp trace.
+#
+
+# First the we need to create the tasks in our system. The newTask command takes one argument:
+# the task id, which you use later when you refer to the task, e.g. when creating jobs. Note that 
+# the task id can be pretty much any string. It also accepts optional parameters:
+#   -priority : takes an integer and specifies the priority of the task. The priorities are used to
+#               layout the the tasks relative to each other (the lower the priority the higher the
+#               task in the plot). If several tasks share the same priority then they are layed out
+#               in the same order as specified. (default 0)
+#   -name     : a string specifying the name of the task. (default "?")
+
+newTask task1 -priority 7 -name "Task1"
+newTask task2 -priority 8 -name "Task2"
+
+# The following commands represent the trace events. Each event has the following shape:
+#
+#   plot <time> <event> <args>
+#
+# The <time> is a number representing the time when the event occured. The <event> is the event name
+# and <args> are arguments specific for the event (note that <args> can be empty).
+
+# The trace for each job follows the following sequence of events:
+#
+#   jobArrived (jobResumed jobPreempted | jobResumed)* jobCompleted
+#
+# First a job needs to arrive. The jobArrive command takes two arguments: the job id and the id of
+# the task it belongs to. It also accepts optional parameters:
+#   -name : a string specifying the name of the job. This name is shown when clicking on a job in
+#           the task graph. (default "<task name> <job number>")
+
+plot 5 jobArrived job2.1 task2 -name "Task2, job 1"
+
+# jobResumed resumes a job. It takes a single argument: the job id.
+
+plot 5 jobResumed job2.1
+plot 20 jobArrived job1.1 task1 -name "Task1, job 1"
+
+# jobPreempted takes a single argument: the id of the preempted job. It also accepts optional 
+# parameters:
+#   -target : the id of the preempting job. This will draw a dashed line between the two jobs.
+
+plot 20 jobPreempted job2.1 -target job1.1
+plot 20 jobResumed job1.1
+
+# jobCompleted takes a single argument: the id of the completed job. It also accepts optional
+# parameters:
+#   -target : the id of the job which is going to be resumed. This will draw a dotted line between 
+#             the two jobs.
+
+plot 35 jobCompleted job1.1 -target job2.1
+
+# You can add messages to a trace to log custom events. They are shown underneath the timeline and
+# expand when you click on them. message takes a single argument: the message to be shown.
+#
+# Optional arguments:
+#   -color : a Tcl color, e.g. red, blue, #123456 (Default black)
+#   -shape : a shape identifier, e.g. circle, square. (Default dot) 
+#            See settings.txt file for a list of all possible values.
+
+plot 35 message "Task task1 has completed!" -color blue -shape square
+
+plot 35 jobResumed job2.1
+plot 50 jobCompleted job2.1

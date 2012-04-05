@@ -1,0 +1,166 @@
+newTask task0x103cb0 -name "uC/OS-II Idle" -priority 63
+newJob job0x103cb0.0 task0x103cb0 -name "uC/OS-II Idle 0"
+newTask task0x103d3c -name "Init" -priority 5
+ignore job0x103d3c.0
+newJob job0x103d3c.0 task0x103d3c -name "Init 0"
+newTask task0x103dc8 -name "Task1" -priority 7
+ignore job0x103dc8.0
+newJob job0x103dc8.0 task0x103dc8 -name "Task1 0"
+newTask task0x103e54 -name "Task2" -priority 8
+ignore job0x103e54.0
+newJob job0x103e54.0 task0x103e54 -name "Task2 0"
+newServer server0xf66a0 -priority 1 -budget 3 -capacity 3 -name "Setup"
+newServer server0xf66fc -priority 2 -budget 10 -capacity 10 -name "Defer"
+newServer server0xf6758 -priority 3 -budget 10 -capacity 10 -name "Poll"
+plot 0 serverResumed server0xf66a0
+plot 0 jobPreempted job0x103d3c.0 -target job0x103d3c.0
+plot 0 jobResumed job0x103d3c.0
+plot 1 serverPreempted server0xf66a0
+plot 1 serverResumed server0xf66fc
+plot 1 jobPreempted job0x103d3c.0 -target job0x103dc8.0
+plot 1 jobResumed job0x103dc8.0
+plot 1 jobCompleted job0x103dc8.0
+plot 1 serverPreempted server0xf66fc
+plot 1 serverResumed server0xf6758
+plot 1 jobPreempted job0x103dc8.0 -target job0x103e54.0
+plot 1 jobResumed job0x103e54.0
+plot 1 jobCompleted job0x103e54.0
+plot 2 serverDepleted server0xf6758
+plot 2 serverPreempted server0xf6758
+plot 2 jobPreempted job0x103e54.0 -target job0x103cb0.0
+plot 2 jobResumed job0x103cb0.0
+plot 5 jobArrived job0x103dc8.1 task0x103dc8 -name "Task1 1"
+plot 5 serverResumed server0xf66fc
+plot 5 jobPreempted job0x103cb0.0 -target job0x103dc8.0
+plot 5 jobResumed job0x103dc8.0
+plot 5 jobResumed job0x103dc8.1
+plot 10 jobCompleted job0x103dc8.1
+plot 10 serverPreempted server0xf66fc
+plot 10 jobPreempted job0x103dc8.1 -target job0x103cb0.0
+plot 10 jobResumed job0x103cb0.0
+plot 25 serverReplenished server0xf66fc 10
+plot 35 jobArrived job0x103dc8.2 task0x103dc8 -name "Task1 2"
+plot 35 serverResumed server0xf66fc
+plot 35 jobPreempted job0x103cb0.0 -target job0x103dc8.1
+plot 35 jobResumed job0x103dc8.1
+plot 35 jobResumed job0x103dc8.2
+plot 40 jobCompleted job0x103dc8.2
+plot 40 serverPreempted server0xf66fc
+plot 40 jobPreempted job0x103dc8.2 -target job0x103cb0.0
+plot 40 jobResumed job0x103cb0.0
+plot 50 serverReplenished server0xf66fc 10
+plot 50 serverReplenished server0xf6758 10
+plot 50 jobArrived job0x103e54.1 task0x103e54 -name "Task2 1"
+plot 50 jobArrived job0x103e54.2 task0x103e54 -name "Task2 2"
+plot 50 serverResumed server0xf6758
+plot 50 jobPreempted job0x103cb0.0 -target job0x103e54.0
+plot 50 jobResumed job0x103e54.0
+plot 50 jobResumed job0x103e54.1
+plot 55 jobCompleted job0x103e54.1
+plot 55 message {Task 'Task2' missed its deadline}
+plot 55 jobResumed job0x103e54.2
+plot 60 serverPreempted server0xf6758
+plot 60 jobPreempted job0x103e54.2 -target job0x103cb0.0
+plot 60 jobResumed job0x103cb0.0
+plot 65 jobArrived job0x103dc8.3 task0x103dc8 -name "Task1 3"
+plot 65 serverResumed server0xf66fc
+plot 65 jobPreempted job0x103cb0.0 -target job0x103dc8.2
+plot 65 jobResumed job0x103dc8.2
+plot 65 jobResumed job0x103dc8.3
+plot 70 jobCompleted job0x103dc8.3
+plot 70 serverPreempted server0xf66fc
+plot 70 jobPreempted job0x103dc8.3 -target job0x103cb0.0
+plot 70 jobResumed job0x103cb0.0
+plot 75 serverReplenished server0xf66fc 10
+plot 95 jobArrived job0x103dc8.4 task0x103dc8 -name "Task1 4"
+plot 95 serverResumed server0xf66fc
+plot 95 jobPreempted job0x103cb0.0 -target job0x103dc8.3
+plot 95 jobResumed job0x103dc8.3
+plot 95 jobResumed job0x103dc8.4
+plot 100 serverReplenished server0xf66fc 10
+plot 100 serverReplenished server0xf6758 10
+plot 100 jobCompleted job0x103dc8.4
+plot 100 serverPreempted server0xf66fc
+plot 100 jobArrived job0x103e54.3 task0x103e54 -name "Task2 3"
+plot 100 serverResumed server0xf6758
+plot 100 jobPreempted job0x103dc8.4 -target job0x103e54.2
+plot 100 jobResumed job0x103e54.2
+plot 101 jobCompleted job0x103e54.2
+plot 101 message {Task 'Task2' missed its deadline}
+plot 101 jobResumed job0x103e54.3
+plot 106 jobCompleted job0x103e54.3
+plot 106 serverDepleted server0xf6758
+plot 106 serverPreempted server0xf6758
+plot 106 jobPreempted job0x103e54.3 -target job0x103cb0.0
+plot 106 jobResumed job0x103cb0.0
+plot 125 serverReplenished server0xf66fc 10
+plot 125 jobArrived job0x103dc8.5 task0x103dc8 -name "Task1 5"
+plot 125 serverResumed server0xf66fc
+plot 125 jobPreempted job0x103cb0.0 -target job0x103dc8.4
+plot 125 jobResumed job0x103dc8.4
+plot 125 jobResumed job0x103dc8.5
+plot 130 jobCompleted job0x103dc8.5
+plot 130 serverPreempted server0xf66fc
+plot 130 jobPreempted job0x103dc8.5 -target job0x103cb0.0
+plot 130 jobResumed job0x103cb0.0
+plot 150 serverReplenished server0xf66fc 10
+plot 150 serverReplenished server0xf6758 10
+plot 150 jobArrived job0x103e54.4 task0x103e54 -name "Task2 4"
+plot 150 serverResumed server0xf6758
+plot 150 jobPreempted job0x103cb0.0 -target job0x103e54.3
+plot 150 jobResumed job0x103e54.3
+plot 150 jobResumed job0x103e54.4
+plot 155 serverPreempted server0xf6758
+plot 155 jobArrived job0x103dc8.6 task0x103dc8 -name "Task1 6"
+plot 155 serverResumed server0xf66fc
+plot 155 jobPreempted job0x103e54.4 -target job0x103dc8.5
+plot 155 jobResumed job0x103dc8.5
+plot 155 jobResumed job0x103dc8.6
+plot 160 jobCompleted job0x103dc8.6
+plot 160 serverPreempted server0xf66fc
+plot 160 serverResumed server0xf6758
+plot 160 jobPreempted job0x103dc8.6 -target job0x103e54.4
+plot 160 jobResumed job0x103e54.4
+plot 160 jobCompleted job0x103e54.4
+plot 161 serverDepleted server0xf6758
+plot 161 serverPreempted server0xf6758
+plot 161 jobPreempted job0x103e54.4 -target job0x103cb0.0
+plot 161 jobResumed job0x103cb0.0
+plot 175 serverReplenished server0xf66fc 10
+plot 185 jobArrived job0x103dc8.7 task0x103dc8 -name "Task1 7"
+plot 185 serverResumed server0xf66fc
+plot 185 jobPreempted job0x103cb0.0 -target job0x103dc8.6
+plot 185 jobResumed job0x103dc8.6
+plot 185 jobResumed job0x103dc8.7
+plot 190 jobCompleted job0x103dc8.7
+plot 190 serverPreempted server0xf66fc
+plot 190 jobPreempted job0x103dc8.7 -target job0x103cb0.0
+plot 190 jobResumed job0x103cb0.0
+plot 200 serverReplenished server0xf66fc 10
+plot 200 serverReplenished server0xf6758 10
+plot 200 jobArrived job0x103e54.5 task0x103e54 -name "Task2 5"
+plot 200 serverResumed server0xf6758
+plot 200 jobPreempted job0x103cb0.0 -target job0x103e54.4
+plot 200 jobResumed job0x103e54.4
+plot 200 jobResumed job0x103e54.5
+plot 205 jobCompleted job0x103e54.5
+plot 205 serverDepleted server0xf6758
+plot 205 serverPreempted server0xf6758
+plot 205 jobPreempted job0x103e54.5 -target job0x103cb0.0
+plot 205 jobResumed job0x103cb0.0
+plot 215 jobArrived job0x103dc8.8 task0x103dc8 -name "Task1 8"
+plot 215 serverResumed server0xf66fc
+plot 215 jobPreempted job0x103cb0.0 -target job0x103dc8.7
+plot 215 jobResumed job0x103dc8.7
+plot 215 jobResumed job0x103dc8.8
+plot 220 jobCompleted job0x103dc8.8
+plot 220 serverPreempted server0xf66fc
+plot 220 jobPreempted job0x103dc8.8 -target job0x103cb0.0
+plot 220 jobResumed job0x103cb0.0
+plot 225 serverReplenished server0xf66fc 10
+plot 230 serverReplenished server0xf66a0 3
+plot 230 serverResumed server0xf66a0
+plot 230 jobPreempted job0x103cb0.0 -target job0x103d3c.0
+plot 230 jobResumed job0x103d3c.0
+plot 230 message {begin printing the log} -color gray
+plot 230 message {end printing the log} -color gray

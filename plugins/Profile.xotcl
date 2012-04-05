@@ -1,0 +1,18 @@
+RealtimePlot instproc profile {time name cycles instructions} {  
+  set message $name
+  if {[llength cycles]} { append message " cycles=$cycles" }
+  if {[llength instructions]} { append message " instructions=$instructions" }
+  
+  # select the appropriate shape
+  switch -- $name {
+    tick { set shape T }
+    scheduler { set shape S }
+    default { set shape M }
+  }
+  
+  my message $message -shape $shape
+}
+
+proc profile {ticks args} {
+  uplevel #0 plot 0 $ticks profile $args
+}

@@ -1,0 +1,874 @@
+package require common
+package require Tk
+package require math
+
+font create tinyFont -size 1
+
+#
+# Usage (if used standalone):
+# 
+# 1. package require realtime-plot
+# 2. loadSettings -file <settings file> (this loads the color and other plotting settings)
+# 3. source <plot script>
+#
+# Optional:
+# 4. [Plot set activePlot] drawTimeline
+#
+
+Class Plot -parameter {{c ".c"} {w ""} {title ""} }
+
+Plot set activePlot ""
+Plot set ignore {}
+Plot set ignoreMissing 0
+
+Plot proc reset {} {
+  Plot set activePlot ""
+  Plot set ignore {}
+
+  foreach plot [Plot info instances -closure] { $plot destroy }
+}
+
+Plot instproc initCanvas {w c args} {
+  set name "main"
+  set title ""
+  
+  parseArgs $args {name title}
+  
+  # overwirte the defaults for this plot
+  my w $w
+  my c $c
+  
+  if {![llength $w]} {
+    set W .
+  } else {
+    set W $w
+  }
+  
+  if {![winfo exists $W]} { toplevel $W }
+  
+  wm title $W $title
+  my title $title
+  
+  # add this plot to the windows menu
+  addWindow $W $name
+  
+  # make sure the window is shown (comply with deprecated trace API, which sets the active plot)
+  wm deiconify $W
+
+  canvas $c -bg white -xscrollcommand "$w.hscroll set" -yscrollcommand "$w.vscroll set"
+
+  # create scroll bars
+  scrollbar $w.hscroll -orient horizontal -command "$c xview"
+  scrollbar $w.vscroll -orient vertical -command "$c yview"    
+
+  # allign these in a grid
+  grid $c -in $W -padx 1 -pady 1 -row 0 -column 0 -rowspan 1 -columnspan 1 -sticky news
+  grid $w.hscroll -in $W -padx 1 -pady 1 -row 1 -column 0 -rowspan 1 -columnspan 1 -sticky news
+  grid $w.vscroll -in $W -padx 1 -pady 1 -row 0 -column 1 -rowspan 1 -columnspan 1 -sticky news
+  grid rowconfig $W 0 -weight 1 -minsize 0
+  grid columnconfig $W 0 -weight 1 -minsize 0
+
+  # create the zoom in and out buttons
+  place [frame $w.controls] -x 0 -y 0
+  pack [button $w.controls.zoomIn -image plus -command "[self] zoom 1.25"] -side left
+  pack [button $w.controls.zoomOut -image minus -command "[self] zoom 0.8"]
+  
+  # keep track of the selected window, e.g. for printing to postscript
+  bind $w <FocusIn> "selectPlot [self]"
+  
+  # make sure to select the plot, so that there is something selected initially
+  selectPlot [self]
+}
+
+proc selectPlot {plot} {
+  set ::selectedPlot $plot
+}
+
+Plot instproc reset {} {
+  my instvar c
+  my instvar w
+  
+  if {![winfo exists $c]} {
+    my initCanvas $w $c
+  }
+  
+  $c delete all
+  
+  my set time 0
+}
+
+Plot proc event {time event args} {
+  eval plot $time $event $args
+  puts "Deprecated 'Plot event' command. Use the 'plot' command instead."
+}
+
+#
+# Write the canvas to a postscript file.
+#
+
+Plot instproc writeToFile {fileName} {
+  # get a file name, incase not specified
+  if {![llength $fileName]} {
+    set defaultDir [file dirname $::traceFileName]
+    set defaultFile [file tail [file rootname $::traceFileName]].ps
+    set fileName [tk_getSaveFile -initialfile $defaultFile -initialdir $defaultDir]
+  }
+  if {![llength $fileName]} return
+
+  my instvar c
+  foreach {x1 y1 x2 y2} [$c bbox all] break
+  
+  # setup the font translation, to make sure all fonts are rendered properly
+  # ... make sure that the Times font is supported
+  switch $::Settings(font.family) {
+    Times {
+      set family Times-Roman
+    }
+    "" {
+      set family Helvetica
+    }
+    default {
+      set family [font configure TkDefaultFont -family] 
+    }
+  }
+  
+  switch $::Settings(font.size) {
+    "" {
+      set size 12
+    }
+    default {
+      set size [string trim [font configure TkDefaultFont -size] -]
+    }
+  }
+  
+  set fontmap(TkDefaultFont) [list $family $size]
+  
+  # do not draw the timemarker when exporting to postscript
+  $c itemconfig timemarker -state hidden
+  
+  # check if should draw message bubbles
+  $c itemconfig message -state hidden
+  
+  # make sure that all changes have been processed (just in case)
+  update
+  
+  # write to postsccript file
+  $c postscript -file $fileName -x $x1 -y $y1 \
+  -width [expr $x2-$x1] -height [expr $y2-$y1] \
+  -fontmap fontmap
+  
+  # restore the hidden objects
+  $c itemconfig timemarker -state normal
+  $c itemconfig message -state normal
+}
+
+#
+# Check if a string should be ignored
+#
+
+Plot proc checkIgnore {s} {
+  foreach ignore [Plot set ignore] {
+    if {[regexp -- ".*${ignore}.*" $s]} {
+      return 1
+    }
+  }
+  return 0
+}
+
+proc heightForClass {class} {
+  set height ""
+  set c $class
+  while {![llength $height] && [llength $c]} {
+    if {[info exists ::Settings(height$c)]} {
+      set height [set ::Settings(height$c)]
+    }
+    set c [$c info superclass]
+  }
+  
+  if {[llength $height]} {
+    return $height
+  } else {
+    error "unknown height for $class"
+  }
+}
+
+proc getAllInstancesOf {class} {
+  set instances [$class info instances]
+  
+  foreach subclass [$class info subclass] {
+    set instances [concat $instances [getAllInstancesOf $subclass]]
+  }
+  
+  return $instances
+}
+
+Class RealtimePlot -superclass Plot -parameter { {bottomY 0} {timeMarkerLocked 0} {tasks {}} {servers {}} {processors {}} {messages {}} {messageNumber 0} {zoomFactor 1} {footnoteY 0}}
+
+bind . <<TraceFinished>> "+RealtimePlot traceFinished"
+
+RealtimePlot proc initialize {} {
+  # load settings
+  foreach {key value} [array get ::Settings plot.*] {
+    set key [string range $key [string length "plot."] end]
+    # convert aaa.bbb to aaaBbb
+    for {set i 1} {$i < [string length $key]} {incr i} {
+      # look for a dot
+      if {[string index $key $i] eq "."} {
+        # remove the dot
+        set key [string replace $key $i $i]
+        # capitalize the next letter, which ends up at i after removing the dot
+        if {$i < [string length $key]} {
+          set key [string replace $key $i $i [string toupper [string index $key $i]]]
+        }
+      }
+    }
+    RealtimePlot set $key $value
+  }
+  
+  # adjust some settings
+  RealtimePlot instvar timePrecision
+  set timePrecision [expr pow(10, $timePrecision)]
+}
+RealtimePlot initialize
+
+RealtimePlot instproc reset {} {
+  next
+  
+  if {[llength [my tasks]]} { [my tasks] destroy }
+  my tasks [Queue new]
+  if {[llength [my servers]]} { [my servers] destroy }
+  my servers [Queue new]
+  
+  my footnoteY [RealtimePlot set taskMargin]
+      
+  # setup bindings for the whole plot
+  bind . <<TimeChanged>> "+[self] updateTimeMarker %d"
+  my enableTimeMarker
+
+  bind . <<TraceLoaded>> "+[self] traceLoaded"
+
+  # spread the event. make sure to update first, so that the . window is created
+  update
+  event generate . <<PlotCreated>> -data "[self] 0"
+}
+
+#
+# Hide the timeline ticks which are obsolete for the current zoom.
+#
+
+RealtimePlot instproc hideObsolete {tag minDistance intervals} {
+  my instvar c
+
+  # find the pivot interval (between those to be hidden and those to be shown)
+  for {set first 0} {$first < [llength $intervals] && [lindex $intervals $first] < $minDistance} {incr first} {}
+
+  # hide those to be hidden
+  $c itemconfig "$tag" -state hidden
+  
+  # show those to be shown
+  $c itemconfig "$tag && interval.[lindex $intervals $first]" -state normal
+}
+
+RealtimePlot instproc zoom {factor} {
+  my instvar c
+  RealtimePlot instvar offsetX
+  RealtimePlot instvar offsetY
+  RealtimePlot instvar timelineLabelDistance
+  RealtimePlot instvar timelineMarkDistance
+  RealtimePlot instvar timelineLabelIntervals
+
+  my zoomFactor [expr [my zoomFactor]*$factor]
+  
+  # scale all scalables
+  $c scale scalable $offsetX $offsetY $factor 1
+  
+  # shift the message shapes by redrawing all messages (since some complex shapes may be difficult to move)
+  my redrawMessages
+
+  # show just enough of labels
+  set x1 [my xForTime 0]
+  set x2 [my xForTime 1]
+  # find the pivot interval (between those to be hidden and those to be shown)
+  set minDistance [expr $timelineLabelDistance/($x2-$x1)]
+  set intervals $timelineLabelIntervals
+  for {set first 0} {$first < [llength $intervals] && [lindex $intervals $first] < $minDistance} {incr first} {}
+  # show only those to be shown
+  $c itemconfig "timeline && label" -state hidden
+  $c itemconfig "timeline && label && interval.[lindex $intervals $first]" -state normal
+
+  # find the pivot interval (between those to be hidden and those to be shown)
+  set minDistance [expr $timelineMarkDistance/($x2-$x1)]
+  set intervals [concat 1 $timelineLabelIntervals]
+  for {set first 0} {$first < [llength $intervals] && [lindex $intervals $first] < $minDistance} {incr first} {}
+  # show only those to be shown
+  $c itemconfig "timeline && mark" -state hidden
+  $c itemconfig "timeline && mark && short && interval.[lindex $intervals $first]" -state normal
+  incr first
+  if  {$first < [llength $intervals]} {
+    $c itemconfig "timeline && mark && middle && interval.[lindex $intervals $first]" -state normal
+  }
+  incr first
+  if  {$first < [llength $intervals]} {
+    $c itemconfig "timeline && mark && long && interval.[lindex $intervals $first]" -state normal
+  }
+  # always show first label
+  $c itemconfig label.first -state normal
+
+  # move the legends
+  switch $::Settings(plot::legend) {
+    right { my centerVertically legenddefault }
+    bottom { my centerHorizontally legenddefault }
+  }
+  my centerHorizontally legendtasks
+
+  # move the label backgrounds (e.g. for annotations)
+  foreach tag [$c find withtag background] {
+    regexp {label\.([0-9]+)} [$c gettags $tag] _ labelTag
+    foreach {x1 y1 x2 y2} [$c bbox $labelTag] break
+    $c coords $tag $x1 $y1 $x2 $y2
+  }
+
+  # spread the word
+  event generate . <<Zoomed>>
+
+  my updateBounds
+}
+
+RealtimePlot instproc destroy {} {
+  removeHandler TimeChanged [self]
+  removeHandler TraceLoaded [self]
+  next
+}
+
+RealtimePlot instproc event {time event args} {
+  # synchronize the time among different processors
+  if {![regexp {(.+)\.plot} [self] _ processor]} {
+    error "plot id '[self]' is not of the form 'xxx.plot'"
+  }
+
+  if {[llength [my info methods $event]]} {
+    updateMaxTime $time
+    eval my $event $time $args
+
+  } else {
+    if {![Plot set ignoreMissing]} {
+      error "'$event' is not implemented"
+    }
+  }
+  
+  return $time
+}
+
+RealtimePlot proc traceFinished {} {
+  foreach plot [RealtimePlot info instances -closure] {
+    $plot traceFinished
+  }
+}
+
+RealtimePlot instproc traceFinished {} {
+  # complete all unfinished jobs
+  foreach job [Job info instances] {
+    if {[string match [$job state] running]} {
+      # complete old rectangle
+      set rect [[my c] find withtag "[string trim $job :] && current"]    
+      if {[llength $rect]} {
+        my updateRect $rect $::maxTime
+      }
+    }
+  }
+
+  # complete all unfinished jobs
+#  foreach job [Job info instances] {
+#    if {[string match [$job state] running]} {
+#      eval my jobPreempted $::maxTime $job
+#    }
+#  }
+
+  # draw the timeline
+  my drawTimeline
+
+  # draw the messages
+  my redrawMessages
+  
+  # draw the legend
+  if {![string match $::Settings(plot::legend) none]} {
+    my drawLegend $::Settings(plot::legend) $::Settings(plot::legendItems)
+  }
+
+  # draw task legend using the legend mechanism (in case collapsed)
+  if {[checkCollapsedMode]} {
+    set tasks {}
+    foreach task [[my tasks] queue] {
+      lappend tasks [list task $task] 
+    }
+    #my drawLegend bottom $tasks -legendTag legendtasks -title Tasks
+  }
+    
+  # update the plot (make sure to update at the end, in case event times are not ascending)
+  my event $::maxTime nop
+  my update $::maxTime
+}
+
+RealtimePlot instproc traceLoaded {} {
+  #my zoom 1.8
+  
+  # shrink the window to fit the trace, if trace smaller than the max window size
+  RealtimePlot instvar offsetX
+  RealtimePlot instvar offsetY
+  RealtimePlot instvar defaultWidth
+  RealtimePlot instvar defaultHeight
+  foreach {x1 y1 x2 y2} [[my c] bbox all] break
+  # take into account the side bars
+  set w [expr 2*$offsetX + 30 + $x2 - $x1]
+  set h [expr 2*$offsetY + 30 + $y2 - $y1]
+  if {$w > $defaultWidth} { set w $defaultWidth }
+  if {$h > $defaultHeight} { set h $defaultHeight }
+  wm geometry [my w] ${w}x${h}
+  foreach {x1 y1 x2 y2} [[my c] bbox !label] break
+}
+
+RealtimePlot instproc enableTimeMarker {} {
+  bind [my c] <Motion> "event generate . <<TimeChanged>> -data \[[self] timeForX \[\[[self] c\] canvasx %x\]\]"
+}
+
+RealtimePlot instproc disableTimeMarker {} {
+  bind [my c] <Motion> ""
+}
+
+#
+# Utilities
+#
+
+RealtimePlot instproc setYForProcessor {processor y} {
+  RealtimePlot instvar yForProcessor
+
+  if {[checkCollapsedMode]} {
+    set yForProcessor($processor) $y    
+  } else {
+    set yForProcessor($processor) a
+  }
+}
+
+RealtimePlot instproc setYForTask {task y} {
+  checkClass $task Task
+  RealtimePlot instvar yForTask
+  set task [string trimleft $task :]
+
+  if {[checkCollapsedMode]} {
+    set yForTask($task) a    
+  } else {
+    set yForTask($task) $y
+  }
+}
+
+RealtimePlot instproc yForTask {task} {
+  checkClass $task Task
+  RealtimePlot instvar yForTask
+  RealtimePlot instvar yForProcessor
+  set task [string trimleft $task :]
+
+  if {[checkCollapsedMode]} {
+    return $yForProcessor([$task processor])
+  } else {
+    return $yForTask($task)
+  }
+}
+
+RealtimePlot instproc yForJob {job} {
+  checkClass $job Job
+  
+  RealtimePlot instvar yForTask
+  RealtimePlot instvar yForProcessor
+  set job [string trimleft $job :]
+
+  if {[checkCollapsedMode]} {
+    return $yForProcessor([$job processor])
+  } else {
+    return $yForTask([$job task])
+  }
+}
+
+RealtimePlot instproc xForTime {time} {
+  RealtimePlot instvar offsetX
+  RealtimePlot instvar timeUnit
+
+  return [expr $offsetX + $time*$timeUnit*[my zoomFactor]]
+}
+
+RealtimePlot instproc timeForX {x} {
+  RealtimePlot instvar offsetX
+  RealtimePlot instvar timeUnit
+
+  return [expr double($x -$offsetX)/($timeUnit*[my zoomFactor])]
+}
+
+RealtimePlot instproc taskHeight {} {
+  RealtimePlot instvar taskBarHeight
+  RealtimePlot instvar taskArrowHeight
+  RealtimePlot instvar taskMargin
+  return [expr $taskBarHeight + $taskArrowHeight + $taskMargin]
+}
+
+proc checkCollapsedMode {} {
+  return [string match $::Settings(plot.tasks) collapsed]
+}
+
+RealtimePlot instproc centerHorizontally {tag {offsetY 0}} {
+  RealtimePlot instvar taskMargin
+  my instvar c
+  
+  foreach {x1 y1 x2 y2} [$c bbox $tag] break
+  if {![info exists x1]} return
+  
+  foreach {X1 Y1 X2 Y2} [$c bbox "!$tag && !legend"] break
+  set x [expr $X1 + ($X2 - $X1)/2 - ($x1 + ($x2 - $x1)/2)]
+  set y [expr $Y2 + $taskMargin - $y1 + $offsetY]
+  $c move $tag $x $y
+}
+
+RealtimePlot instproc centerVertically {tag} {
+  RealtimePlot instvar taskMargin
+  my instvar c
+
+  foreach {x1 y1 x2 y2} [$c bbox $tag] break
+  if {![info exists x1]} return
+
+  foreach {X1 Y1 X2 Y2} [$c bbox "!$tag && !legend"] break
+  set x [expr $X2 + $taskMargin - $x1]
+  set y [expr $Y1 + ($Y2 - $Y1)/2 - ($y1 + ($y2 - $y1)/2)]
+  $c move $tag $x $y
+}
+
+#
+# Update things
+#
+
+RealtimePlot instproc update {time} {  
+  # spread the event
+  event generate . <<PlotUpdated>> -data "[self] $time"
+
+  # update timeline labels and the bounds, so do a void zoom
+  my zoom [my zoomFactor]
+}
+
+RealtimePlot instproc updateBounds {} {
+  my instvar c
+  RealtimePlot instvar offsetX
+  RealtimePlot instvar offsetY
+  foreach {x1 y1 x2 y2} [$c bbox all] break
+  $c config -scrollregion [list [math::min 0 [expr $x1 - $offsetX]] \
+                                [math::min 0 [expr $y1 - $offsetY]] \
+                                [expr $x2 + $offsetX] \
+                                [expr $y2 + $offsetY] ]
+}
+
+RealtimePlot instproc updateTimeMarker {time} {
+  my instvar c
+  my instvar bottomY
+  global maxTime
+  RealtimePlot instvar offsetX
+  RealtimePlot instvar timePrecision
+  RealtimePlot instvar timelineHeight
+  
+  if {[my timeMarkerLocked]} return
+  
+  #set x [$c canvasx $x]
+  #set time [my timeForX $x]
+  
+  # make sure that the time is within bounds, i.e. 0 <= time <= maxTime
+  if {$time < 0} {
+    set time 0
+  }
+  if {$maxTime < $time} {
+    set time $maxTime
+  }
+  set x [my xForTime $time]
+  set y [expr $bottomY + $timelineHeight]
+  
+  $c delete timemarker
+  set tag [$c create line $x 0 $x $y -fill red -tags timemarker]
+  $c lower $tag
+  
+  set time [expr double(round($time * $timePrecision))/$timePrecision]
+  
+  set w [winfo toplevel $c]
+  if {[llength [my title]]} {
+    wm title $w "[my title], time: $time"
+  } else {
+    wm title $w "time: $time"
+  }
+  
+  # generate an event for any observers
+  #event generate . <<TimeChanged>> -data $time
+
+  # update the server capacity markers for all servers (assigned to this plot)
+  my updateTimeMarkerServers $time
+}
+
+RealtimePlot instproc updateRect {tags time} {
+  my instvar c
+  set rect [$c find withtag $tags]
+  
+  if {[llength $rect] == 0} {
+    error "rectangle does not exist with tags '$tags'"
+  } elseif {[llength $rect] > 1} {
+    error "more than 1 rectangle cound with tags '$tags'"
+  }
+  
+  foreach {x1 y1 x2 y2} [$c coords $rect] {}
+  $c coords $rect $x1 $y1 [my xForTime $time] $y2
+}
+
+RealtimePlot instproc redrawMessages {} {
+  [my c] delete message
+  foreach {t m a} [my messages] {
+    eval my drawMessage $t [list $m] $a
+  }
+}
+
+#
+# EVENTS
+#
+
+RealtimePlot instproc relteqEvent {time event args} {
+  if {[llength $args]} {
+    set message "RELTEQ: $event event ([join $args " "])"
+  } else {
+    set message "RELTEQ: $event event"
+  }
+  
+  if {[info exists ::Settings(shape.message.$event)]} {
+    set shape $::Settings(shape.message.$event)
+  } else {
+    set shape disk
+  }
+
+  if {[info exists ::Settings(color.message.$event)]} {
+    set color $::Settings(color.message.$event)
+  } else {
+    set color black
+  }
+  
+  my message $time $message -shape $shape -color $color
+}
+
+RealtimePlot instproc nop {time} {
+  return
+}
+
+RealtimePlot instproc message {time message args} {
+  my lappend messages $time $message $args
+}
+
+#
+# Add a string to the ignore list
+#
+
+proc ignore {s} {
+  if {$::Settings(ignore_api)} {
+    Plot lappend ignore $s
+  }
+}
+
+#
+# Return the plot for the processor, taking into account the expanded/collapsed modes.
+#
+
+proc plotForProcessor {processor} {
+  if {[checkCollapsedMode]} {
+    return main.plot
+  } else {
+    return $processor.plot
+  }
+}
+
+proc newProcessor {processor args} {
+  set name $processor
+
+  parseArgs $args {name}
+  
+  # get the corresponding plot id
+  set plot [plotForProcessor $processor]
+
+  # check if plot already created
+  if {![llength [RealtimePlot info instances -closure $plot]]} {
+    # create the plot
+    RealtimePlot $plot
+
+    # craete the containing window and canvas
+    if {[checkCollapsedMode]} {
+      set w .main
+      $plot initCanvas $w $w.c
+    } else {
+      set w .$processor  
+      $plot initCanvas $w $w.c -name $name -title $name
+    }
+    
+    $plot reset
+  }
+  
+  # set the y coordinate for the processor, in case of collapsed view
+  if {[checkCollapsedMode]} {
+    # set the processor Y coordinate
+    RealtimePlot instvar taskBarHeight
+    RealtimePlot instvar taskArrowHeight
+    RealtimePlot instvar taskMargin
+    set taskHeight [$plot taskHeight]
+    set processorY [expr [llength [$plot processors]]*$taskHeight]
+    $plot setYForProcessor $processor $processorY
+
+    # draw processor name label
+    RealtimePlot instvar offsetX
+    RealtimePlot instvar labelOffsetX
+    if {![info exists c]} { $plot instvar c }
+    set x [expr $offsetX - $labelOffsetX]
+    set y [expr $processorY + $taskArrowHeight + $taskBarHeight/2]
+    $c create text $x $y -text $name -anchor e -tags "$processor label"
+    
+    # create indicators for the top and bottom of the processor (used e.g. for migration lines)
+    $c create text $x [expr $processorY + $taskArrowHeight] -tags "$processor top"
+    $c create text $x [expr $processorY + $taskArrowHeight + $taskBarHeight] -tags "$processor bottom"
+    
+    # shift all servers
+    foreach s [[$plot servers] queue] {
+      # shift the task
+      $s plotY [expr [$s plotY]+$taskHeight]
+    }
+    $c move server 0 $taskHeight
+
+    # update bottomY
+    $plot instvar bottomY
+    incr bottomY $taskHeight
+  }
+  
+  # add the processor to the plot's processor list
+  $plot lappend processors $processor
+  
+  return $plot
+}
+
+proc newJobIfNotDefined {job} {
+  # check if job was defined
+  if {![llength [info commands $job]]} {
+    # extract the task from the job id
+    if {[regexp {(.+)\.(.+)} $job _ task]} {
+      # create the new job
+      uplevel #0 newJob $job $task
+    } else {
+      error "job '$job' does not exist, and could not extract task from the job"
+    }
+  }
+}
+
+#
+# Dispatch the command to the appropriate plot
+#
+
+proc plot {time command args} {
+  set processor ""
+    
+  # if it is a job command and the job does not exist yet, then create it
+  if {[lsearch {jobResumed jobPreempted jobCompleted} $command] > -1} {
+    set job [lindex $args 0]
+    newJobIfNotDefined $job   
+    
+    # some commands may also have a -target parameter
+    set i [lsearch $args -target]
+    if {$i > -1} {
+      set job [lindex $args [expr $i + 1]]
+      newJobIfNotDefined $job   
+    }
+  }
+
+  set i [lsearch $args -processor]
+  if {$i > -1} {
+    set processor [lindex $args [expr $i+1]]
+
+    # forward the remaining command to the appropriate processor plot
+    switch $command {
+      serverReplenished -
+      serverDepleted -
+      serverResumed -
+      serverPreempted -
+      taskArrived -
+      jobResumed -
+      jobCompleted {
+        [lindex $args 0] processor $processor
+        set time [timeOnProcessor $time $processor]
+        set time [uplevel #0 [plotForProcessor $processor] event $time $command $args]
+      }
+      jobArrived {
+        # if a job is arriving the job does not exist yet
+        set time [timeOnProcessor $time $processor]
+        set time [uplevel #0 [plotForProcessor $processor] event $time $command $args]
+      }
+      jobPreempted {
+        set job [lindex $args 0]
+        set time [timeOnProcessor $time [$job processor]]
+        set time [uplevel #0 [plotForProcessor [$job processor]] event $time $command $args]
+        $job processor $processor
+      }
+    }
+    
+  } else {
+    # check if processor was specified in a previous call
+    switch $command {
+      jobAcquiredMutex -
+      jobReleasedMutex -
+      serverReplenished -
+      serverDepleted -
+      serverResumed -
+      serverPreempted -
+      taskArrived {
+        set processor [[lindex $args 0] processor]
+      }
+      jobArrived {
+        # if job does not specify its own processor, inherit it from the task
+        # note that at this point the job does not exist, so need to extract task from args
+        set processor [[lindex $args 1] processor]        
+      }
+      jobResumed -
+      jobPreempted -
+      jobCompleted {
+        set job [lindex $args 0]
+        set processor [$job processor]
+        
+        # if job does not specify its own processor, inherit it from the task
+        if {![llength $processor]} { set processor [[$job task] processor] }
+      }
+      syncSent {
+        set processor [lindex $args 0]
+      }
+      syncReceived {
+        set processor [lindex $args 1]
+      }
+    }
+  
+    if {[llength $processor] && ![string match $processor main]} {
+      # forward the remaining command to the appropriate processor plot
+      set time [timeOnProcessor $time $processor]
+      set time [uplevel #0 [plotForProcessor $processor] event $time $command $args]
+    } else {  
+      # if processor was not specified, then forward to the default plot
+      Plot instvar activePlot
+
+      # check if plot was initialized
+      if {![llength $activePlot]} {
+        set activePlot [newProcessor main]
+      }
+      
+      # compute the local time on the processor
+      regexp {(.+)\.plot} $activePlot _ processor
+      set time [timeOnProcessor $time $processor]
+      
+      # evalutate the command on the desired plot
+      set time [eval $activePlot event $time $command $args]
+    }
+  }
+  
+  # trigger any other event handlers registered for this event
+  foreach {_ handler} [array get ::eventHandlers $command] {
+    eval $handler $time $args
+  }
+}
+

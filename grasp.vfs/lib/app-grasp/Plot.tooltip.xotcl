@@ -1,0 +1,70 @@
+RealtimePlot instproc showTooltip {x y message args} {
+  my instvar c
+  
+  set anchor sw
+  
+  parseArgs $args {anchor}
+  
+  set id [$c create text $x $y -text [subst $message] -anchor $anchor -tags tooltip]
+  foreach {x1 y1 x2 y2} [$c bbox $id] {}
+  set margin 2
+  incr x1 -$margin
+  incr y1 -$margin
+  incr x2 +$margin
+  incr y2 +$margin
+  $c create rectangle $x1 $y1 $x2 $y2 -fill white -outline grey -tags tooltip
+  $c raise $id
+}
+
+RealtimePlot instproc hideTooltip {} {
+  my instvar c
+  
+  $c delete tooltip
+}
+
+RealtimePlot instproc onItemPress {x y message} {
+  
+  # move the rectangle to the top
+  my instvar c
+  set tag [lindex [$c find overlapping $x $y $x $y] end]
+  my set tag $tag
+  my set tagAbove [$c find above $tag]
+  $c raise $tag
+  
+  my showTooltip $x $y $message
+}
+
+RealtimePlot instproc onItemRelease {} {
+  my hideTooltip
+  
+  [my c] lower [my set tag] [my set tagAbove]
+  my unset tag
+  my unset tagAbove
+}
+
+RealtimePlot instproc bindTooltip {tag message} {
+  my instvar c
+  $c bind $tag <ButtonPress> "[self] onItemPress \[$c canvasx %x\] \[$c canvasy %y\] [list $message]"
+  $c bind $tag <ButtonRelease> "[self] onItemRelease"
+}
+
+RealtimePlot instproc showMessage {tag message args} {
+  my instvar c
+  
+  parseArgs $args {time}
+  
+  if {[info exists time]} {
+    my updateTimeMarker $time
+    my timeMarkerLocked 1
+  }
+  
+  foreach {x y} [$c coords $tag] break
+  
+  [self] showTooltip $x $y $message
+}
+
+RealtimePlot instproc hideMessage {} {
+  my timeMarkerLocked 0
+
+  [self] hideTooltip
+}

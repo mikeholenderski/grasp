@@ -1,0 +1,58 @@
+newProcessor core1 -name "Core 1"
+newProcessor core2 -name "Core 2"
+
+newTask task1 -priority 1 -name "Task 1" -processor core2 -color #666666
+newTask task2 -priority 2 -name "Task 2" -processor core1 -color #EEEEEE
+newTask task3 -priority 3 -name "Task 3" -processor core1 -color #333333
+newTask task4 -priority 4 -name "Task 4" -processor core2 -color #AAAAAA
+
+newMutex mutex1 -name "Mutex 1" -color black -pattern lines_up
+
+plot 0 jobArrived job3.1 task3
+plot 0 jobResumed job3.1
+
+plot 10 jobArrived job2.1 task2
+plot 10 jobPreempted job3.1 -target job2.1
+plot 10 jobResumed job2.1
+
+plot 12 jobAcquiredMutex job2.1 mutex1
+plot 17 jobReleasedMutex job2.1 mutex1
+
+plot 20 jobCompleted job2.1 -target job3.1
+plot 20 jobResumed job3.1
+
+plot 25 jobCompleted job3.1
+
+plot 40 jobArrived job3.2 task3
+plot 40 jobResumed job3.2
+
+plot 50 jobArrived job2.2 task2
+plot 50 jobPreempted job3.2 -target job2.2
+plot 50 jobResumed job2.2
+
+plot 60 jobCompleted job2.2 -target job3.2
+plot 60 jobResumed job3.2
+
+plot 70 jobCompleted job3.2
+
+plot 0 jobArrived job1.1 task1
+plot 0 jobResumed job1.1
+
+plot 15 jobArrived job4.1 task4
+plot 17 jobPreempted job1.1 -target job4.1
+plot 17 jobResumed job4.1
+
+plot 17 jobAcquiredMutex job4.1 mutex1
+plot 20 jobReleasedMutex job4.1 mutex1
+
+plot 27 jobCompleted job4.1 -target job1.1
+plot 27 jobResumed job1.1
+
+plot 55 jobArrived job4.2 task4
+plot 55 jobPreempted job1.1 -target job4.2
+plot 55 jobResumed job4.2
+
+plot 67 jobCompleted job4.2 -target job1.1
+plot 67 jobResumed job1.1
+
+plot 70 jobCompleted job1.1

@@ -1,0 +1,221 @@
+Class Job -parameter { {name ""} {task ""} {priority ""} {processor ""} {state init} {mutexes {}} {processor ""} {color ""} {arrivalColor black} {arrivalStem solid} {deadlineColor black} {deadlineStem solid} }
+
+bind . <<PlotReset>> "+Job reset"
+
+Job proc reset {} {
+  foreach job [Job info instances -closure] { $job destroy }
+}
+
+Job instproc initWithTask {task args} {
+  checkClass $task Task
+
+  set job [self]
+  set task [string trimleft $task :]
+
+  #set name "[$task name] [$task nextJobIndex]"
+  set name [string trim $job :]
+  
+  set processor [$task processor]
+  set color ""
+  
+  set optional {name processor color}
+
+  parseArgs $args $optional 
+
+  $job task $task
+
+  # set default color, if custom color not specified
+  if {![llength $color]} {
+    set color [$task color]
+  }
+    
+  # set the priority to the priority of the task
+  $job set priority [$task priority]
+
+  # add the job to the task jobs
+  $task lappend jobs [string trim $job :]
+  
+  # override the defaults foro optional parameters from args
+  foreach argument $optional {
+    if {[info exists $argument]} {
+      $job $argument [set $argument]
+    }
+  }
+
+  return $job
+}
+
+proc newJob {id task args} {  
+  eval [Job $id] initWithTask $task $args  
+}
+
+#
+# Utility method combining task arrival with creation of a job
+#
+
+RealtimePlot instproc jobArrived {time job task args} {
+  set processor ""
+  set name ""
+  set arrowColor [$task arrivalColor]
+  set arrowStem [$task arrivalStem]
+  set kind short
+  
+  parseArgs $args {processor name arrowColor arrowStem kind}
+
+  eval newJob $job $task [removeArgs $args {arrowColor arrowStem kind}]
+
+  set message "Job '[$job name]' arrived"
+  
+  set args "-message {$message} -color $arrowColor -stem $arrowStem -kind $kind"
+  if {[llength $processor]} {
+    lappend args -processor $processor
+  }
+  
+  eval [self] taskArrived $time $task $args
+  
+  $job state ready
+}
+
+RealtimePlot instproc jobResumed {time job args} {
+  checkClass $job Job
+
+  # check if job should be ignored
+  if {[Plot checkIgnore $job]} return
+
+  set force 0
+  
+  parseArgs $args {processor force}
+
+  # if previousely the safety job was resumed, then preempt it
+  if {[string match [[[$job task] safetyJob] state] running]} {
+    my jobCompleted $time [[$job task] safetyJob] -force 1
+  }
+
+  # check if job is actually active
+  if {!$force && [string match [$job state] completed]} {
+    # if we are very strict, then generate an error, otherwise resume the task's safety job
+    if {0} {
+      error "trying to resume a completed job '[$job name]'"
+    } else {
+      eval my jobResumed $time [[$job task] safetyJob] -force 1
+      return
+    }
+  }
+  
+  # check if job has aquired any mutexes (i.e. is in a critical section)
+  if {[llength [$job mutexes]]} {
+    # construct a list of all the mutexes for the message
+    foreach m [$job mutexes] { lappend mutexes [$m name] }
+    foreach m [$job mutexes] { 
+      my drawRectangle $job $time criticalSection -message "[$job name] (acquired: [join $mutexes {, }])" -mutex $m
+    }
+  } else {
+    my drawRectangle $job $time active
+  }
+  
+  $job state running
+}
+
+RealtimePlot instproc jobPreempted {time job args} {
+  my instvar c  
+
+  set target ""
+  set processor ""
+  
+  parseArgs $args {target processor}
+
+  checkClass $job Job
+
+  # check if job should be ignored
+  if {[Plot checkIgnore $job]} return
+
+  set job [string trim $job :]
+
+  # make sure that the task is drawn in case a job is "preempted" before resumed
+  my drawTask [$job task]
+
+  # check if job is actually active
+  if {[string match [$job state] completed]} {
+    # if we are very strict, then generate an error, otherwise resume the task's safety job
+    if {0} {
+      error "trying to preempt a completed job '[$job name]'"
+    } else {
+      # preempt the safety job only if it was resumed before
+      if {[string match [[[$job task] safetyJob] state] running]} {
+        eval my jobCompleted $time [[$job task] safetyJob] -force 1
+        return
+      }
+    }
+  }
+    
+  # draw a dashed line to the task which is to be resumed, if any
+  if {[llength $target]} {
+    # check if job should be ignored
+    if {![Plot checkIgnore $target]} {
+      # make sure that the target task is drawn in case a job is "preempted" before resumed
+      my drawTask [$target task]
+      my drawPreemptionLine $time $job $target
+    }
+  }
+
+  # draw a dashed line with arrow to the processor, if migrated (and target not ignored)
+  if {[llength $processor] && ![Plot checkIgnore $processor]} {
+    my drawMigrationLine $time $job $processor
+  }
+  
+  # draw a preempted box, if job has not completed yet
+  if {![string match [$job state] completed]} {
+    my drawRectangle $job $time preempted
+  }
+  
+  # check if job is actually active
+  if {![string match [$job state] completed]} {
+    $job state preempted
+  }
+}
+
+RealtimePlot instproc jobCompleted {time job args} {
+  my instvar c  
+
+  checkClass $job Job  
+  
+  # check if job should be ignored
+  if {[Plot checkIgnore $job]} return
+
+  set force 0
+
+  parseArgs $args {target processor force}
+
+  # check if job is actually active
+  if {!$force && [string match [$job state] completed]} {
+    #error "trying to complete a completed job '[$job name]'"
+    return
+  }
+  
+  # draw a dashed line to the task which is to be resumed, if any
+  if {[info exists target]} {
+    # check if job should be ignored
+    if {![Plot checkIgnore $target]} {
+      my drawPreemptionLine $time $job $target
+    }
+  }
+
+  # finish up the previous box
+  set rect [$c find withtag "$job && current"]
+  if {[llength $rect]} {
+    my updateRect $rect $time
+    $c dtag $rect "current"
+  }
+  
+  # note that job state should not be changed here, rather inside the "Job completed" method
+  # however, to make the plotter standalone, the state is "hacked" here
+  $job state completed
+}
+
+RealtimePlot instproc jobBlocked {time job} {
+  checkClass $job Job
+
+  my drawRectangle $job $time blocked
+
+  $job state blocked
+}
