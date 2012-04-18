@@ -85,6 +85,24 @@ proc addPreprocessor {f} {
 }
 
 #
+# Utiliy methods for accumulating and printing warnings only once
+#
+
+array set warnings {}
+
+proc addWarning {key warning} {
+  set ::warnings($key) $warning
+}
+
+proc printWarnings {} {
+  foreach {k v} [array get ::warnings] {
+    puts "Warning: $v"
+  }
+}
+
+addHandler TraceLoaded printWarnings
+
+#
 # View menu commands
 #
 
@@ -318,7 +336,7 @@ proc openTrace {fileName} {
   foreach preprocessor $::preprocessors {
     set trace [$preprocessor $trace]
   }
-  
+
   eval $trace
   
   # finish up

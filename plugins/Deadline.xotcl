@@ -24,7 +24,7 @@ RealtimePlot instproc taskDeadline {time task args} {
   #     -length : short | long
   #     -message : string (displayed when clicked on the arrow)
   #
-  my drawArrow $task $time first -length short -color $arrowColor -stem $arrowStem -message $message
+  my drawArrow $task $time first -kind short -color $arrowColor -stem $arrowStem -message $message
 }
 
 RealtimePlot instproc jobDeadline {time job args} {

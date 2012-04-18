@@ -95,11 +95,14 @@ Plot instproc reset {} {
   $c delete all
   
   my set time 0
+  
+  Plot set ignore $::Settings(ignore)
+  Plot set ignoreMissing $::Settings(ignore_missing)
 }
 
 Plot proc event {time event args} {
   eval plot $time $event $args
-  puts "Deprecated 'Plot event' command. Use the 'plot' command instead."
+  addWarning plot.event.deprecated "Deprecated 'Plot event' command. Use the 'plot' command instead"
 }
 
 #

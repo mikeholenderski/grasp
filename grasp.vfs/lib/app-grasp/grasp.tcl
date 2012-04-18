@@ -102,16 +102,14 @@ if {[llength $::Settings(font.size)]} {
 eval font configure TkDefaultFont $fontFamily $fontSize
 eval font create TkDefaultFontBold $fontFamily $fontSize -weight bold
 
-# ignore those tasks to be ignored
-if {[info exists ignore]} {
-  Plot set ignore $ignore
-}
+# ignore those tasks, etc. to be ignored
+set ::Settings(ignore) $ignore
+
+# ignore unimplemented events
+set ::Settings(ignore_missing) $ignore_missing
 
 # check if 'ignore' should be ignored
 set ::Settings(ignore_api) $ignore_api
-
-# ignore unimplemented events
-Plot set ignoreMissing $ignore_missing
 
 # load plugins from the command line (if any)
 if {[llength $plugins]} {
@@ -126,7 +124,7 @@ set ::Settings(plot::legendItems) $legend_items
 
 # setup collapsed toggle in the view menu, to correspond to the Settings
 set viewCollapsed [string match $::Settings(plot.tasks) "collapsed"]
- 
+
 # open the trace
 if {[llength $::argv]} {
   openTrace [lindex $::argv end]
